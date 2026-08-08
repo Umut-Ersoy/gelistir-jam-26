@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://ckrl1s8cjitqy"]
+
+[ext_resource type="Script" uid="uid://boqf38vtjqp77" path="res://scripts/environment/floor_tile.gd" id="1_floortile"]
+[ext_resource type="PackedScene" uid="uid://l3kc38hum05" path="res://assets/meshes/environment/floor.glb" id="2_x0poa"]
+
+[node name="FloorTile" type="Node3D" unique_id=1360327497]
+script = ExtResource("1_floortile")
+
+[node name="floor" parent="." unique_id=28750958 instance=ExtResource("2_x0poa")]

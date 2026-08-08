@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://f1mw0w03gvin"]
+
+[ext_resource type="Script" uid="uid://0ym1q8o1ebdg" path="res://scripts/environment/stairs_tile.gd" id="1_stairstile"]
+[ext_resource type="PackedScene" uid="uid://bj6piv3apb830" path="res://assets/meshes/environment/stairs.glb" id="2_tgy4p"]
+
+[node name="StairsTile" type="Node3D" unique_id=1259968298]
+script = ExtResource("1_stairstile")
+
+[node name="stairs2" parent="." unique_id=63258846 instance=ExtResource("2_tgy4p")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)

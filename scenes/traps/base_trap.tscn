@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/traps/base_trap.gd" id="1_traparea"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_trap"]
+size = Vector3(1, 0.4, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_trap"]
+size = Vector3(0.9, 0.2, 0.9)
+
+[node name="TrapArea" type="Area3D"]
+script = ExtResource("1_traparea")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_trap")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_trap")
