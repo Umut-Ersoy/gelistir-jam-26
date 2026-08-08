@@ -3,7 +3,9 @@
 [ext_resource type="PackedScene" uid="uid://d0jttjlxbjfp" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" uid="uid://bt5rki4f77ht6" path="res://scripts/environment/dungeon_generator.gd" id="2_dungeongen"]
 [ext_resource type="Texture2D" uid="uid://btsh1w8gj16k3" path="res://assets/sprites/hand_idle_anim.png" id="3_sxapu"]
+[ext_resource type="Texture2D" uid="uid://dakusembbatj4" path="res://assets/ui/ui_clock.png" id="4_3l0jt"]
 [ext_resource type="Shader" uid="uid://sljb8kjq6goq" path="res://assets/shaders/pixelate.gdshader" id="4_cet4m"]
+[ext_resource type="Texture2D" uid="uid://bgqbo7w5yy1nl" path="res://assets/ui/ui_hp.3.png" id="5_0uitm"]
 
 [sub_resource type="Environment" id="Environment_root"]
 background_mode = 1
@@ -73,6 +75,16 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("3_sxapu")
 expand_mode = 3
+
+[node name="TextureRect2" type="TextureRect" parent="CanvasLayer" unique_id=193173313]
+offset_right = 40.0
+offset_bottom = 40.0
+texture = ExtResource("4_3l0jt")
+
+[node name="TextureRect3" type="TextureRect" parent="CanvasLayer" unique_id=1855095]
+offset_right = 1920.0
+offset_bottom = 1080.0
+texture = ExtResource("5_0uitm")
 
 [node name="CanvasShader" type="CanvasLayer" parent="." unique_id=100528168]
 process_mode = 4
