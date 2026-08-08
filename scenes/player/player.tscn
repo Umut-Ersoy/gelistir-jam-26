@@ -5,9 +5,7 @@
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.4
-
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hurtbox"]
-radius = 0.45
+height = 1.8
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_left"]
 radius = 0.2
@@ -20,14 +18,14 @@ floor_max_angle = 0.87266463
 script = ExtResource("1_player")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=648171705]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_player")
 
 [node name="Hurtbox" type="Area3D" parent="." unique_id=1175072385]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 
-[node name="HurtboxCollision" type="CollisionShape3D" parent="Hurtbox" unique_id=538088846]
-shape = SubResource("CapsuleShape3D_hurtbox")
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox" unique_id=130954284]
+shape = SubResource("CapsuleShape3D_player")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=895294815]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)

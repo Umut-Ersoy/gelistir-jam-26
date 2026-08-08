@@ -8,6 +8,8 @@ func _init() -> void:
 
 	build_floor_tile_scene()
 	build_wall_bottom_tile_scene()
+	build_wall_mid_tile_scene()
+	build_wall_top_tile_scene()
 	build_stairs_tile_scene()
 	build_base_trap_scene()
 
@@ -64,6 +66,58 @@ func build_wall_bottom_tile_scene() -> void:
 	static_body.add_child(col)
 
 	save_packed_scene(root, "res://scenes/environment/wall_bottom_tile.tscn")
+
+func build_wall_mid_tile_scene() -> void:
+	var root = Node3D.new()
+	root.name = "WallMidTile"
+	var script = load("res://scripts/environment/wall_mid_tile.gd")
+	if script: root.set_script(script)
+
+	var static_body = StaticBody3D.new()
+	static_body.name = "WallBody"
+	root.add_child(static_body)
+
+	var mesh_inst = MeshInstance3D.new()
+	mesh_inst.name = "MeshInstance3D"
+	var box_mesh = BoxMesh.new()
+	box_mesh.size = Vector3(1.0, 1.0, 0.2)
+	mesh_inst.mesh = box_mesh
+	static_body.add_child(mesh_inst)
+
+	var col = CollisionShape3D.new()
+	col.name = "CollisionShape3D"
+	var box_shape = BoxShape3D.new()
+	box_shape.size = Vector3(1.0, 1.0, 0.2)
+	col.shape = box_shape
+	static_body.add_child(col)
+
+	save_packed_scene(root, "res://scenes/environment/wall_mid_tile.tscn")
+
+func build_wall_top_tile_scene() -> void:
+	var root = Node3D.new()
+	root.name = "WallTopTile"
+	var script = load("res://scripts/environment/wall_top_tile.gd")
+	if script: root.set_script(script)
+
+	var static_body = StaticBody3D.new()
+	static_body.name = "WallBody"
+	root.add_child(static_body)
+
+	var mesh_inst = MeshInstance3D.new()
+	mesh_inst.name = "MeshInstance3D"
+	var box_mesh = BoxMesh.new()
+	box_mesh.size = Vector3(1.0, 1.0, 0.2)
+	mesh_inst.mesh = box_mesh
+	static_body.add_child(mesh_inst)
+
+	var col = CollisionShape3D.new()
+	col.name = "CollisionShape3D"
+	var box_shape = BoxShape3D.new()
+	box_shape.size = Vector3(1.0, 1.0, 0.2)
+	col.shape = box_shape
+	static_body.add_child(col)
+
+	save_packed_scene(root, "res://scenes/environment/wall_top_tile.tscn")
 
 func build_stairs_tile_scene() -> void:
 	var root = Node3D.new()

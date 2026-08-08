@@ -23,9 +23,15 @@ class_name DungeonGenerator
 @export var weight_option_b: float = 30.0 # 1-block gap on both sides
 @export var weight_option_c: float = 30.0 # Full width trap + WallRunSurface Area3D
 
+@export_group("Wall Settings")
+@export var min_wall_height: int = 3 # Minimum total wall height in tiles (must be >= 3: 1 bottom + 1 mid + 1 top)
+@export var max_wall_height: int = 6 # Maximum total wall height in tiles
+
 # Scene resources
 var floor_tile_scene: PackedScene
 var wall_bottom_tile_scene: PackedScene
+var wall_mid_tile_scene: PackedScene
+var wall_top_tile_scene: PackedScene
 var stairs_tile_scene: PackedScene
 var base_trap_scene: PackedScene
 
@@ -42,6 +48,7 @@ var is_first_corridor: bool = true
 var last_platform_center: Vector3 = Vector3.ZERO
 var last_platform_size: int = 0
 var has_platform: bool = false
+var active_wall_height: int = 3 # Wall height for the current corridor segment
 
 # Grid coordinate tracking dictionaries for Rule 1 & Rule 2
 var floor_grid: Dictionary = {} # Vector3i -> Node3D
@@ -66,6 +73,10 @@ func _ready() -> void:
 		wall_bottom_tile_scene = load("res://scenes/environment/wall_bottom_tile.tscn")
 	elif ResourceLoader.exists("res://scenes/environment/wall_tile.tscn"):
 		wall_bottom_tile_scene = load("res://scenes/environment/wall_tile.tscn")
+	if ResourceLoader.exists("res://scenes/environment/wall_mid_tile.tscn"):
+		wall_mid_tile_scene = load("res://scenes/environment/wall_mid_tile.tscn")
+	if ResourceLoader.exists("res://scenes/environment/wall_top_tile.tscn"):
+		wall_top_tile_scene = load("res://scenes/environment/wall_top_tile.tscn")
 	if ResourceLoader.exists("res://scenes/environment/stairs_tile.tscn"):
 		stairs_tile_scene = load("res://scenes/environment/stairs_tile.tscn")
 	if ResourceLoader.exists("res://scenes/traps/base_trap.tscn"):
@@ -135,6 +146,52 @@ func try_spawn_wall_bottom_tile(wall_pos: Vector3, floor_y_pos: float, angle_deg
 	active_corridors_container.add_child(wall_tile)
 	wall_grid[key] = wall_tile
 
+# Spawns a full stacked wall column (bottom + mid layers + top) at the given position.
+# active_wall_height determines the total number of tiles:
+#   height=3 → 1 bottom + 1 mid + 1 top
+#   height=6 → 1 bottom + 4 mid + 1 top
+# Each tile is 1m tall. The base pos (wall_pos.y) is the center of the bottom tile.
+# Rule 1 is applied only to the bottom tile (the only tile that can overlap a floor tile).
+func try_spawn_wall_stacked(wall_pos: Vector3, floor_y_pos: float, angle_deg: float) -> void:
+	# Rule 1: if there's a floor tile at this XZ, skip entire column
+	var floor_key = get_grid_key(Vector3(wall_pos.x, floor_y_pos, wall_pos.z))
+	if floor_grid.has(floor_key):
+		var floor_node = floor_grid[floor_key]
+		if is_instance_valid(floor_node):
+			return
+
+	var snapped_x = round(wall_pos.x)
+	var snapped_z = round(wall_pos.z)
+	var base_y = wall_pos.y # Center of the bottom tile
+
+	# Layer 0: Bottom tile (wall_bottom_tile_scene)
+	if wall_bottom_tile_scene:
+		var tile = wall_bottom_tile_scene.instantiate() as Node3D
+		tile.position = Vector3(snapped_x, base_y, snapped_z)
+		tile.rotation_degrees.y = angle_deg
+		active_corridors_container.add_child(tile)
+		wall_grid[floor_key] = tile
+
+	# Layers 1 .. (active_wall_height - 2): Mid tiles
+	var mid_count = active_wall_height - 2
+	for i in range(mid_count):
+		if not wall_mid_tile_scene:
+			break
+		var mid_y = base_y + float(i + 1) # Each tile 1m above the previous
+		var mid_tile = wall_mid_tile_scene.instantiate() as Node3D
+		mid_tile.position = Vector3(snapped_x, mid_y, snapped_z)
+		mid_tile.rotation_degrees.y = angle_deg
+		active_corridors_container.add_child(mid_tile)
+
+	# Top layer: Top tile
+	if wall_top_tile_scene:
+		var top_y = base_y + float(active_wall_height - 1)
+		var top_tile = wall_top_tile_scene.instantiate() as Node3D
+		top_tile.position = Vector3(snapped_x, top_y, snapped_z)
+		top_tile.rotation_degrees.y = angle_deg
+		active_corridors_container.add_child(top_tile)
+
+
 func get_next_turn_angle() -> int:
 	if is_first_corridor:
 		is_first_corridor = false
@@ -163,6 +220,7 @@ func generate_next_segment() -> void:
 
 	var rad = deg_to_rad(current_angle_deg)
 	current_forward_dir = Vector3(-sin(rad), 0, -cos(rad)).normalized()
+	
 	var right_dir = Vector3(cos(rad), 0, -sin(rad)).normalized()
 
 	if has_platform:
@@ -170,7 +228,8 @@ func generate_next_segment() -> void:
 		current_position = Vector3(round(current_position.x), round(current_position.y), round(current_position.z))
 		has_platform = false
 
-	var active_width = randi_range(min_corridor_width, max_corridor_width)
+	var active_width = randi_range(min_corridor_width, max_corridor_width) | 1 # Force odd width so tile offsets always land on integers
+	active_wall_height = randi_range(max(3, min_wall_height), max(3, max_wall_height)) # Minimum 3: 1 bottom + 1 mid + 1 top
 	var effective_min_len = max(active_width, min_corridor_length)
 	var max_len = max(effective_min_len, max_corridor_length)
 	var corridor_length = randi_range(effective_min_len, max_len)
@@ -234,16 +293,16 @@ func spawn_corridor_row(center_pos: Vector3, y_pos: float, fwd_dir: Vector3, rig
 
 		spawn_floor_tile(tile, tile_pos, tile_angle)
 
-	# 2. Left and Right Wall Bottom tiles (Rule 1 applied inside try_spawn_wall_bottom_tile)
+	# 2. Left and Right walls — stacked bottom+mid+top based on active_wall_height (Rule 1 applied per layer)
 	var wall_y_offset: float = 0.5
 	if is_stair_step and stair_dir == 1:
 		wall_y_offset = -0.5
 
 	var left_wall_pos = center_pos + right_dir * (-half_w - 0.5) + Vector3(0, y_pos + wall_y_offset, 0)
-	try_spawn_wall_bottom_tile(left_wall_pos, y_pos, angle_deg + 180.0)
+	try_spawn_wall_stacked(left_wall_pos, y_pos, angle_deg + 180.0)
 
 	var right_wall_pos = center_pos + right_dir * (half_w + 0.5) + Vector3(0, y_pos + wall_y_offset, 0)
-	try_spawn_wall_bottom_tile(right_wall_pos, y_pos, angle_deg)
+	try_spawn_wall_stacked(right_wall_pos, y_pos, angle_deg)
 
 func generate_end_staircase(right_dir: Vector3, active_width: int) -> void:
 	var stairs_length = randi_range(min_stairs_length, max_stairs_length)
@@ -298,7 +357,7 @@ func spawn_weighted_trap(center_pos: Vector3, y_pos: float, right_dir: Vector3, 
 	if option_c:
 		# Option C: Full width trap + WallRunSurface Area3D on one wall extending +1m front & back
 		var trap_inst = base_trap_scene.instantiate() as Node3D
-		trap_inst.position = Vector3(round(center_pos.x), y_pos + 0.2, round(center_pos.z))
+		trap_inst.position = Vector3(round(center_pos.x), y_pos, round(center_pos.z))
 		trap_inst.rotation_degrees.y = angle_deg
 		active_corridors_container.add_child(trap_inst)
 
@@ -320,7 +379,7 @@ func spawn_weighted_trap(center_pos: Vector3, y_pos: float, right_dir: Vector3, 
 	elif option_b and active_width >= 3:
 		# Option B: 1-block gap on both sides
 		var trap_inst = base_trap_scene.instantiate() as Node3D
-		trap_inst.position = Vector3(round(center_pos.x), y_pos + 0.2, round(center_pos.z))
+		trap_inst.position = Vector3(round(center_pos.x), y_pos, round(center_pos.z))
 		trap_inst.rotation_degrees.y = angle_deg
 		active_corridors_container.add_child(trap_inst)
 
@@ -329,7 +388,7 @@ func spawn_weighted_trap(center_pos: Vector3, y_pos: float, right_dir: Vector3, 
 		var offset_side = (half_w - 0.5) * (1.0 if randf() > 0.5 else -1.0)
 		var trap_pos = center_pos + right_dir * offset_side + Vector3(0.0, y_pos + 0.2, 0.0)
 		var trap_inst = base_trap_scene.instantiate() as Node3D
-		trap_inst.position = Vector3(round(trap_pos.x), y_pos + 0.2, round(trap_pos.z))
+		trap_inst.position = Vector3(round(trap_pos.x), y_pos, round(trap_pos.z))
 		trap_inst.rotation_degrees.y = angle_deg
 		active_corridors_container.add_child(trap_inst)
 

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://di47j8rx0vhxm"]
 
-[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" uid="uid://d0jttjlxbjfp" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" uid="uid://bt5rki4f77ht6" path="res://scripts/environment/dungeon_generator.gd" id="2_dungeongen"]
 [ext_resource type="Texture2D" uid="uid://oyxy0o7kd75v" path="res://assets/sprites/test2.PNG" id="3_sxapu"]
 [ext_resource type="Shader" uid="uid://sljb8kjq6goq" path="res://assets/shaders/pixelate.gdshader" id="4_cet4m"]
@@ -48,7 +48,7 @@ trap_chance = 0.4
 [node name="ActiveCorridors" type="Node3D" parent="DungeonGenerator" unique_id=349616799]
 
 [node name="Player" parent="." unique_id=1208151537 instance=ExtResource("1_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, -1)
 move_speed = 8.0
 slide_speed = 12.0
 
@@ -61,6 +61,7 @@ shape = SubResource("BoxShape3D_horde")
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1333113924]
 process_mode = 4
 layer = 100
+visible = false
 
 [node name="TextureRect" type="TextureRect" parent="CanvasLayer" unique_id=610041875]
 anchors_preset = 15
@@ -78,6 +79,7 @@ expand_mode = 3
 [node name="CanvasShader" type="CanvasLayer" parent="." unique_id=100528168]
 process_mode = 4
 layer = 200
+visible = false
 follow_viewport_enabled = true
 
 [node name="ColorRect" type="ColorRect" parent="CanvasShader" unique_id=731233471]
