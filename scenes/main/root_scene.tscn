@@ -48,7 +48,7 @@ trap_chance = 0.4
 [node name="ActiveCorridors" type="Node3D" parent="DungeonGenerator" unique_id=349616799]
 
 [node name="Player" parent="." unique_id=1208151537 instance=ExtResource("1_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, -1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -1)
 move_speed = 8.0
 slide_speed = 12.0
 

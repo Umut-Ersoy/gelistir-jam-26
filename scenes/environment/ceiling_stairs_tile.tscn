@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://chfhhdgu3rjcr"]
+
+[ext_resource type="Script" uid="uid://d15yitsyubm7t" path="res://scripts/environment/ceiling_stairs_tile.gd" id="1_ceilingstairstile"]
+[ext_resource type="PackedScene" uid="uid://cibkuno8vbuol" path="res://assets/meshes/environment/ceiling_stairs.glb" id="2_ceilingstairs"]
+
+[node name="CeilingStairsTile" type="Node3D" unique_id=2047496812]
+script = ExtResource("1_ceilingstairstile")
+
+[node name="ceiling_stairs" parent="." unique_id=749828742 instance=ExtResource("2_ceilingstairs")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, -0.5, 0)

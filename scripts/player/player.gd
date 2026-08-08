@@ -31,6 +31,8 @@ var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9
 # Internal variables
 var default_capsule_height: float = 2.0
 var default_capsule_position_y: float = 1.0
+var default_camera_position_y: float = 1.5
+var camera_height_diff: float = 0.3
 var slide_timer: float = 0.0
 var wall_run_timer: float = 0.0
 var wall_run_side: int = 0 # -1 left, 1 right
@@ -43,17 +45,28 @@ func _ready() -> void:
 		GameManager.current_hp = current_hp
 		GameManager.max_hp = max_hp
 
+	if camera:
+		default_camera_position_y = camera.position.y
+
 	if collision_shape and collision_shape.shape is CapsuleShape3D:
-		default_capsule_height = (collision_shape.shape as CapsuleShape3D).height
+		var capsule = collision_shape.shape as CapsuleShape3D
+		default_capsule_height = capsule.height
 		default_capsule_position_y = collision_shape.position.y
+		if camera:
+			camera_height_diff = default_capsule_height - camera.position.y
 
 	if state_machine:
 		state_machine.init(self)
+		state_machine.state_changed.connect(_on_state_changed)
 
 	# Connect area entered for hurtbox
 	var hurtbox = get_node_or_null("Hurtbox")
 	if hurtbox and hurtbox is Area3D:
 		(hurtbox as Area3D).area_entered.connect(_on_area_entered)
+
+func _on_state_changed(old_state: PlayerStateMachine.StateType, _new_state: PlayerStateMachine.StateType) -> void:
+	if old_state == PlayerStateMachine.StateType.SLIDE:
+		restore_hitbox()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if state_machine and state_machine.current_state_type == PlayerStateMachine.StateType.DEAD:
@@ -132,7 +145,7 @@ func update_state_logic(delta: float) -> void:
 					velocity.y = jump_velocity
 					var push_direction = transform.basis.x * (-wall_run_side) * 4.0
 					velocity += push_direction
-				state_machine.transition_to(PlayerStateMachine.StateType.JUMP)
+					state_machine.transition_to(PlayerStateMachine.StateType.JUMP)
 
 		PlayerStateMachine.StateType.GET_HIT:
 			if get_hit_timer.is_stopped():
@@ -177,8 +190,11 @@ func enter_slide_state() -> void:
 	slide_timer = slide_duration
 	if collision_shape and collision_shape.shape is CapsuleShape3D:
 		var capsule = collision_shape.shape as CapsuleShape3D
-		capsule.height = default_capsule_height * 0.5
-		collision_shape.position.y = default_capsule_position_y * 0.5
+		var capsule_width: float = capsule.radius * 2.0
+		capsule.height = capsule_width
+		collision_shape.position.y = capsule_width * 0.5
+		if camera:
+			camera.position.y = capsule.height - camera_height_diff
 	state_machine.transition_to(PlayerStateMachine.StateType.SLIDE)
 
 func restore_hitbox() -> void:
@@ -186,6 +202,8 @@ func restore_hitbox() -> void:
 		var capsule = collision_shape.shape as CapsuleShape3D
 		capsule.height = default_capsule_height
 		collision_shape.position.y = default_capsule_position_y
+	if camera:
+		camera.position.y = default_camera_position_y
 
 func check_wall_run_available() -> bool:
 	if shapecast_left and shapecast_left.is_colliding():

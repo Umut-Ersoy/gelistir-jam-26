@@ -1,0 +1,9 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/environment/ceiling_tile.gd" id="1_ceilingtile"]
+[ext_resource type="PackedScene" uid="uid://dmfqgf3xses40" path="res://assets/meshes/environment/ceiling.glb" id="2_ceiling"]
+
+[node name="CeilingTile" type="Node3D"]
+script = ExtResource("1_ceilingtile")
+
+[node name="ceiling" parent="." instance=ExtResource("2_ceiling")]
