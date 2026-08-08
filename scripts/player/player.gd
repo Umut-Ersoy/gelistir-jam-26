@@ -13,6 +13,11 @@ class_name Player
 @export var mouse_sensitivity: float = 0.003
 @export var fast_fall_speed: float = 18.0
 
+@export_group("Camera Physics Effects")
+@export var max_camera_tilt_deg: float = 3.5 # Maximum camera tilt angle in degrees when strafing
+@export var camera_tilt_speed: float = 8.0   # Smoothing factor (lerp speed) for camera tilt
+@export var wall_run_tilt_deg: float = 6.0   # Additional camera tilt during wall-run
+
 var current_hp: int = 3
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 
@@ -94,6 +99,7 @@ func _physics_process(delta: float) -> void:
 	update_state_logic(delta)
 	apply_movement(delta)
 	move_and_slide()
+	update_camera_tilt(delta)
 
 func _process(delta: float) -> void:
 	if GameManager and state_machine.current_state_type != PlayerStateMachine.StateType.DEAD:
@@ -185,6 +191,23 @@ func apply_movement(delta: float) -> void:
 	else:
 		velocity.x = move_toward(velocity.x, 0, speed)
 		velocity.z = move_toward(velocity.z, 0, speed)
+
+func update_camera_tilt(delta: float) -> void:
+	if not camera:
+		return
+
+	# Calculate local velocity along character's axes
+	var local_vel = global_transform.basis.inverse() * velocity
+	var lateral_speed = local_vel.x
+	var norm_lateral = clamp(lateral_speed / max(move_speed, 1.0), -1.0, 1.0)
+	var target_tilt_deg = -norm_lateral * max_camera_tilt_deg
+
+	# Add extra tilt during wall-run
+	if state_machine and state_machine.current_state_type == PlayerStateMachine.StateType.WALL_RUN:
+		target_tilt_deg += wall_run_side * wall_run_tilt_deg
+
+	var target_tilt_rad = deg_to_rad(target_tilt_deg)
+	camera.rotation.z = lerp(camera.rotation.z, target_tilt_rad, delta * camera_tilt_speed)
 
 func enter_slide_state() -> void:
 	slide_timer = slide_duration
