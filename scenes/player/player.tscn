@@ -1,15 +1,13 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://d0jttjlxbjfp"]
 
-[ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
-[ext_resource type="Script" path="res://core/state_machine/state_machine.gd" id="2_statemachine"]
+[ext_resource type="Script" uid="uid://dj7yuhbth5e12" path="res://scripts/player/player.gd" id="1_player"]
+[ext_resource type="Script" uid="uid://cup5fwte8bnr0" path="res://core/state_machine/state_machine.gd" id="2_statemachine"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.4
-height = 2.0
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hurtbox"]
 radius = 0.45
-height = 2.0
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_left"]
 radius = 0.2
@@ -17,47 +15,48 @@ radius = 0.2
 [sub_resource type="SphereShape3D" id="SphereShape3D_right"]
 radius = 0.2
 
-[node name="Player" type="CharacterBody3D"]
+[node name="Player" type="CharacterBody3D" unique_id=975322255]
+floor_max_angle = 0.87266463
 script = ExtResource("1_player")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=648171705]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("CapsuleShape3D_player")
 
-[node name="Hurtbox" type="Area3D" parent="."]
+[node name="Hurtbox" type="Area3D" parent="." unique_id=1175072385]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 
-[node name="HurtboxCollision" type="CollisionShape3D" parent="Hurtbox"]
+[node name="HurtboxCollision" type="CollisionShape3D" parent="Hurtbox" unique_id=538088846]
 shape = SubResource("CapsuleShape3D_hurtbox")
 
-[node name="Camera3D" type="Camera3D" parent="."]
+[node name="Camera3D" type="Camera3D" parent="." unique_id=895294815]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 
-[node name="HandWeapon" type="Node3D" parent="Camera3D"]
+[node name="HandWeapon" type="Node3D" parent="Camera3D" unique_id=1902847529]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, -0.25, -0.5)
 
-[node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="Camera3D/HandWeapon"]
+[node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="Camera3D/HandWeapon" unique_id=457401226]
 billboard = 1
 
-[node name="AttackRayCast" type="RayCast3D" parent="Camera3D/HandWeapon"]
+[node name="AttackRayCast" type="RayCast3D" parent="Camera3D/HandWeapon" unique_id=226079036]
 target_position = Vector3(0, 0, -3)
 
-[node name="ShapeCastLeft" type="ShapeCast3D" parent="."]
+[node name="ShapeCastLeft" type="ShapeCast3D" parent="." unique_id=1099454116]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("SphereShape3D_left")
 target_position = Vector3(-0.8, 0, 0)
 
-[node name="ShapeCastRight" type="ShapeCast3D" parent="."]
+[node name="ShapeCastRight" type="ShapeCast3D" parent="." unique_id=1075583429]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("SphereShape3D_right")
 target_position = Vector3(0.8, 0, 0)
 
-[node name="PlayerStateMachine" type="Node" parent="."]
+[node name="PlayerStateMachine" type="Node" parent="." unique_id=1656783760]
 script = ExtResource("2_statemachine")
 
-[node name="GetHitTimer" type="Timer" parent="."]
+[node name="GetHitTimer" type="Timer" parent="." unique_id=1103767445]
 wait_time = 0.2
 one_shot = true
 
-[node name="AttackTimer" type="Timer" parent="."]
+[node name="AttackTimer" type="Timer" parent="." unique_id=1713142192]
 one_shot = true

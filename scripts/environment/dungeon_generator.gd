@@ -175,7 +175,7 @@ func generate_next_segment() -> void:
 	var max_len = max(effective_min_len, max_corridor_length)
 	var corridor_length = randi_range(effective_min_len, max_len)
 	var has_mid_stair = randf() < mid_stair_chance
-	var mid_stair_index = corridor_length / 2 if has_mid_stair else -1
+	var mid_stair_index = int(float(corridor_length) / 2.0) if has_mid_stair else -1
 	var mid_stair_dir = 1 if randf() > 0.5 else -1
 
 	var start_segment_pos = current_position
