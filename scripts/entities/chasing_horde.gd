@@ -1,7 +1,10 @@
 extends Area3D
 class_name ChasingHorde
 
+@export_group("Speed & Catch-Up Settings")
 @export var speed: float = 6.5
+@export var speed_boost_distance: float = 15.0     # A* distance threshold in meters to double speed
+@export var speed_boost_multiplier: float = 2.0   # Speed multiplier when A* distance exceeds threshold
 @export var start_delay: float = 3.0
 @export var path_recalc_interval: float = 0.15 # Recalculate A* path 6-7 times per sec
 
@@ -74,14 +77,26 @@ func _recalculate_path() -> void:
 		if new_path.size() > 0:
 			current_path = new_path
 
+func _get_path_length(p_path: PackedVector3Array) -> float:
+	if p_path.is_empty():
+		return 0.0
+	var total_len: float = global_position.distance_to(p_path[0])
+	for i in range(p_path.size() - 1):
+		total_len += p_path[i].distance_to(p_path[i + 1])
+	return total_len
+
 func _move_along_path(delta: float) -> void:
+	# Calculate current movement speed (2x speed boost if A* path distance exceeds threshold)
+	var path_dist = _get_path_length(current_path)
+	var current_speed = speed * speed_boost_multiplier if path_dist > speed_boost_distance else speed
+
 	if current_path.is_empty():
 		# Fallback if path is empty: direct movement towards player
 		var target_pos = target_player.global_position
 		target_pos.y = global_position.y
 		var dir = (target_pos - global_position)
 		if dir.length() > 0.1:
-			global_position += dir.normalized() * speed * delta
+			global_position += dir.normalized() * current_speed * delta
 		return
 
 	var target_pt = current_path[0]
@@ -98,7 +113,7 @@ func _move_along_path(delta: float) -> void:
 
 	if dist > 0.01:
 		var dir = to_pt.normalized()
-		global_position += dir * min(speed * delta, dist)
+		global_position += dir * min(current_speed * delta, dist)
 
 func _on_body_entered(body: Node) -> void:
 	_check_and_kill(body)

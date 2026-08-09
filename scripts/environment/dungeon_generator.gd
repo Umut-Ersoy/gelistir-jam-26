@@ -74,6 +74,7 @@ var astar_id_counter: int = 1
 
 var active_corridors_container: Node3D
 var player_ref: Node3D
+var horde_ref: Node3D
 
 func _ready() -> void:
 	# Save initial orientation in _ready()
@@ -130,11 +131,8 @@ func _process(_delta: float) -> void:
 			return
 
 	# Distance check to generate ahead of player using distance_to
-	var iterations = 0
-	var max_iterations_per_frame = 50
-	while current_position.distance_to(player_ref.global_position) < spawn_distance_ahead and iterations < max_iterations_per_frame:
+	while current_position.distance_to(player_ref.global_position) < spawn_distance_ahead:
 		generate_next_segment()
-		iterations += 1
 
 	cleanup_passed_tiles()
 
@@ -640,9 +638,17 @@ func cleanup_passed_tiles() -> void:
 		if not is_instance_valid(node) or node.is_queued_for_deletion():
 			wall_grid.erase(k)
 
-	var player_z = player_ref.global_position.z
+	if not is_instance_valid(horde_ref):
+		horde_ref = get_node_or_null("../ChasingHorde")
+		if not horde_ref and get_tree() and get_tree().current_scene:
+			for child in get_tree().current_scene.get_children():
+				if child is ChasingHorde:
+					horde_ref = child
+					break
+
+	var reference_z = horde_ref.global_position.z if is_instance_valid(horde_ref) else player_ref.global_position.z
 	for child in active_corridors_container.get_children():
 		if child is Node3D:
 			var tile_z = child.global_position.z
-			if tile_z > player_z + despawn_distance_behind:
+			if tile_z > reference_z + despawn_distance_behind:
 				child.queue_free()

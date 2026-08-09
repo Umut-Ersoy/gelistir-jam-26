@@ -1,6 +1,7 @@
 extends Node
 
 var bgm_player: AudioStreamPlayer
+var sfx_player: AudioStreamPlayer
 
 # { section (int): Array[AudioStream] }
 var bgm_library: Dictionary = {}
@@ -20,6 +21,11 @@ func _ready() -> void:
 	bgm_player.bus = "Master"
 	add_child(bgm_player)
 	bgm_player.finished.connect(_on_bgm_finished)
+
+	sfx_player = AudioStreamPlayer.new()
+	sfx_player.name = "SFXPlayer"
+	sfx_player.bus = "Master"
+	add_child(sfx_player)
 
 	_index_bgm_library()
 
@@ -141,3 +147,21 @@ func unpause_bgm() -> void:
 func resume_bgm() -> void:
 	if bgm_player and not bgm_player.playing:
 		bgm_player.play()
+
+## Genel SFX ses çalma metodu
+func play_sfx(path: String) -> void:
+	var stream = load(path) as AudioStream
+	if stream and sfx_player:
+		sfx_player.stream = stream
+		sfx_player.play()
+
+## Ölüm anında ses-death, ses-death2, ses-death3 varyantlarından birini rastgele çalar
+func play_random_death_sound() -> void:
+	var death_sounds = [
+		"res://assets/ses/ses-death.wav",
+		"res://assets/ses/ses-death2.wav",
+		"res://assets/ses/ses-death3.wav"
+	]
+	var chosen_path = death_sounds[randi() % death_sounds.size()]
+	play_sfx(chosen_path)
+
