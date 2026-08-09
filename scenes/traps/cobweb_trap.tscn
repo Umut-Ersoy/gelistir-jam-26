@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://sxb5t17nonv5"]
+
+[ext_resource type="Script" uid="uid://c32e8sf2syyc3" path="res://scripts/traps/cobweb_trap.gd" id="1_ur4ks"]
+[ext_resource type="PackedScene" uid="uid://daf62df12n42" path="res://assets/meshes/traps/web.glb" id="2_k82co"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_tclo4"]
+size = Vector3(1, 1, 0.3)
+
+[node name="CobwebTrap" type="Area3D" unique_id=1221389153]
+script = ExtResource("1_ur4ks")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1801377790]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_tclo4")
+
+[node name="web" parent="." unique_id=658683225 instance=ExtResource("2_k82co")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0.5, 0)

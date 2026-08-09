@@ -54,10 +54,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("CylinderShape3D_bhvvn")
 
 [node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="." unique_id=822694041]
-transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 0, 1.4000001, 0)
+transform = Transform3D(0.35, 0, 0, 0, 0.35, 0, 0, 0, 0.35, 0.33394748, 1.9660535, 0)
 billboard = 2
 sprite_frames = SubResource("SpriteFrames_iqh7i")
-animation = &"idle"
+animation = &"attack"
 autoplay = "idle"
 
 [node name="RayCast3D" type="RayCast3D" parent="." unique_id=769926772]

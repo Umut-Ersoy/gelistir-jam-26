@@ -1,0 +1,65 @@
+[gd_scene format=3 uid="uid://b7s8q4f15ciy1"]
+
+[ext_resource type="Script" uid="uid://okdsc31ovh7m" path="res://scripts/entities/standing_enemy.gd" id="1_7q3bn"]
+[ext_resource type="Texture2D" uid="uid://c1e3cgnv7a76h" path="res://assets/sprites/standing_enemies/thin/thin_attack.png" id="2_ii67w"]
+[ext_resource type="Texture2D" uid="uid://da7i3gxufnl21" path="res://assets/sprites/standing_enemies/thin/thin_idle.png" id="3_44cck"]
+[ext_resource type="Texture2D" uid="uid://d4cj43al8mcr0" path="res://assets/sprites/standing_enemies/thin/thin_prepare.png" id="4_eehvt"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_irl6n"]
+radius = 0.4
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_bhvvn"]
+radius = 1.4
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_iqh7i"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_ii67w")
+}],
+"loop": 0,
+"name": &"attack",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_44cck")
+}],
+"loop": 0,
+"name": &"idle",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_eehvt")
+}],
+"loop": 0,
+"name": &"prepare",
+"speed": 1.0
+}]
+
+[node name="Thin" type="CharacterBody3D" unique_id=1051249154]
+script = ExtResource("1_7q3bn")
+max_hp = 1
+attack_windup_time = 1.0
+attack_cooldown = 1.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1065953639]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CylinderShape3D_irl6n")
+
+[node name="TriggerArea" type="Area3D" parent="." unique_id=1418273101]
+
+[node name="TriggerCollision" type="CollisionShape3D" parent="TriggerArea" unique_id=673182515]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CylinderShape3D_bhvvn")
+
+[node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="." unique_id=822694041]
+transform = Transform3D(0.25, 0, 0, 0, 0.25, 0, 0, 0, 0.25, 0, 1.0000001, 0)
+billboard = 2
+sprite_frames = SubResource("SpriteFrames_iqh7i")
+animation = &"prepare"
+autoplay = "idle"
+
+[node name="RayCast3D" type="RayCast3D" parent="." unique_id=769926772]
+target_position = Vector3(0, -0.1, 0)

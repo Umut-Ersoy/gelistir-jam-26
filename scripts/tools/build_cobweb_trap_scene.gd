@@ -15,7 +15,7 @@ func _init() -> void:
 	var visual = MeshInstance3D.new()
 	visual.name = "Visual"
 	var quad = QuadMesh.new()
-	quad.size = Vector2(3.0, 3.0)
+	quad.size = Vector2(1.0, 1.0)
 	visual.mesh = quad
 
 	var mat = StandardMaterial3D.new()
@@ -29,7 +29,7 @@ func _init() -> void:
 	var col_shape = CollisionShape3D.new()
 	col_shape.name = "CollisionShape3D"
 	var box = BoxShape3D.new()
-	box.size = Vector3(3.0, 3.0, 0.4)
+	box.size = Vector3(1.0, 1.0, 0.4)
 	col_shape.shape = box
 	trap.add_child(col_shape)
 

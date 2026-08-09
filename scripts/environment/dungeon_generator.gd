@@ -379,7 +379,7 @@ func generate_next_segment() -> void:
 	if randf() < trap_chance:
 		var center_pos = start_segment_pos + current_forward_dir * (int(float(corridor_length) / 2.0) + 2.0)
 		if cobweb_trap_scene and randf() < cobweb_chance:
-			spawn_cobweb_trap(center_pos, current_y, current_angle_deg, corridor_length, active_width, active_wall_height)
+			spawn_cobweb_trap(center_pos, current_y, right_dir, current_angle_deg, active_width, active_wall_height)
 		else:
 			spawn_weighted_trap(center_pos, current_y, right_dir, current_angle_deg, corridor_length, active_width)
 
@@ -546,20 +546,23 @@ func build_landing_platform(right_dir: Vector3, active_width: int) -> void:
 	last_platform_size = active_width
 	has_platform = true
 
-func spawn_cobweb_trap(center_pos: Vector3, floor_y: float, angle_deg: float, _corridor_len: int, active_width: int, active_wall_h: int) -> void:
+func spawn_cobweb_trap(center_pos: Vector3, floor_y: float, right_dir: Vector3, angle_deg: float, active_width: int, active_wall_h: int) -> void:
 	if not cobweb_trap_scene:
 		return
 
-	var cobweb_inst = cobweb_trap_scene.instantiate() as Node3D
-	# Position at center Y = floor_y + (active_wall_h / 2.0) so it sits on floor and reaches ceiling
-	var center_y = floor_y + (float(active_wall_h) / 2.0)
-	cobweb_inst.position = Vector3(round(center_pos.x), center_y, round(center_pos.z))
-	cobweb_inst.rotation_degrees.y = angle_deg
+	var half_w = float(active_width) / 2.0
 
-	if cobweb_inst.has_method("setup_size"):
-		cobweb_inst.setup_size(float(active_width), float(active_wall_h))
+	# Duplicate cobweb_trap_scene copies across corridor width (left wall to right wall) and height (1m above floor to ceiling)
+	for y_lvl in range(1, active_wall_h):
+		var y_pos = floor_y + float(y_lvl)
+		for x_idx in range(active_width):
+			var x_offset = (float(x_idx) - half_w + 0.5)
+			var tile_pos = center_pos + right_dir * x_offset + Vector3(0, y_pos, 0)
 
-	active_corridors_container.add_child(cobweb_inst)
+			var cobweb_inst = cobweb_trap_scene.instantiate() as Node3D
+			cobweb_inst.position = Vector3(round(tile_pos.x), round(tile_pos.y), round(tile_pos.z))
+			cobweb_inst.rotation_degrees.y = angle_deg
+			active_corridors_container.add_child(cobweb_inst)
 
 func spawn_weighted_trap(center_pos: Vector3, y_pos: float, right_dir: Vector3, angle_deg: float, corridor_len: float, active_width: int) -> void:
 	if not base_trap_scene:

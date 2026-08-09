@@ -30,6 +30,7 @@ var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9
 
 # Node references
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
+@onready var hurtbox_collision_shape: CollisionShape3D = get_node_or_null("Hurtbox/CollisionShape3D") as CollisionShape3D
 @onready var camera: Camera3D = $Camera3D
 @onready var hand_weapon: Node3D = $Camera3D/HandWeapon
 @onready var attack_raycast: RayCast3D = $Camera3D/HandWeapon/AttackRayCast
@@ -101,7 +102,10 @@ func _ready() -> void:
 	# Connect area entered for hurtbox
 	var hurtbox = get_node_or_null("Hurtbox")
 	if hurtbox and hurtbox is Area3D:
+		(hurtbox as Area3D).position = Vector3.ZERO
 		(hurtbox as Area3D).area_entered.connect(_on_area_entered)
+	if hurtbox_collision_shape:
+		hurtbox_collision_shape.position.y = default_capsule_position_y
 
 func _on_state_changed(old_state: PlayerStateMachine.StateType, new_state: PlayerStateMachine.StateType) -> void:
 	if old_state == PlayerStateMachine.StateType.SLIDE:
@@ -272,6 +276,13 @@ func enter_slide_state() -> void:
 		var capsule_width: float = capsule.radius * 2.0
 		capsule.height = capsule_width
 		collision_shape.position.y = capsule_width * 0.5
+
+		if hurtbox_collision_shape:
+			if hurtbox_collision_shape.shape is CapsuleShape3D:
+				var hb_capsule = hurtbox_collision_shape.shape as CapsuleShape3D
+				hb_capsule.height = capsule_width
+			hurtbox_collision_shape.position.y = capsule_width * 0.5
+
 		if camera:
 			camera.position.y = capsule.height - camera_height_diff
 	state_machine.transition_to(PlayerStateMachine.StateType.SLIDE)
@@ -281,6 +292,13 @@ func restore_hitbox() -> void:
 		var capsule = collision_shape.shape as CapsuleShape3D
 		capsule.height = default_capsule_height
 		collision_shape.position.y = default_capsule_position_y
+
+		if hurtbox_collision_shape:
+			if hurtbox_collision_shape.shape is CapsuleShape3D:
+				var hb_capsule = hurtbox_collision_shape.shape as CapsuleShape3D
+				hb_capsule.height = default_capsule_height
+			hurtbox_collision_shape.position.y = default_capsule_position_y
+
 	if camera:
 		camera.position.y = default_camera_position_y
 
@@ -431,7 +449,7 @@ func update_attack_logic(delta: float) -> void:
 
 
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, slow_duration: float = 0.2) -> void:
 	if state_machine and state_machine.current_state_type == PlayerStateMachine.StateType.DEAD:
 		return
 
@@ -444,7 +462,7 @@ func take_damage(amount: int) -> void:
 	if current_hp <= 0:
 		instant_death()
 	else:
-		get_hit_timer.start(0.2)
+		get_hit_timer.start(slow_duration)
 		state_machine.transition_to(PlayerStateMachine.StateType.GET_HIT)
 
 func heal(amount: int) -> void:
@@ -493,15 +511,15 @@ func _on_area_entered(area: Area3D) -> void:
 		script_name = str(area.get_script().get_global_name())
 
 	if script_name == "FrontGuard" or area.name.contains("FrontGuard"):
-		take_damage(1)
+		take_damage(1, 0.2)
 	elif script_name == "CobwebTrap" or area.name.contains("Cobweb") or area.get("is_cobweb") == true:
-		take_damage(0)
+		take_damage(0, 1.0)
 	elif script_name == "TrapArea" or area.name.contains("TrapArea") or area.name.contains("Trap"):
 		if area.get("is_cobweb") == true:
-			take_damage(0)
+			take_damage(0, 1.0)
 		elif area.get("is_instakill") == true:
 			instant_death()
 		else:
-			take_damage(1)
+			take_damage(1, 0.2)
 	elif script_name == "KillZone" or area.name.contains("KillZone") or area.name.contains("ChasingHorde"):
 		instant_death()
