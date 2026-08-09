@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://d0jttjlxbjfp" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" uid="uid://bt5rki4f77ht6" path="res://scripts/environment/dungeon_generator.gd" id="2_dungeongen"]
 [ext_resource type="Shader" uid="uid://sljb8kjq6goq" path="res://assets/shaders/pixelate.gdshader" id="4_cet4m"]
+[ext_resource type="PackedScene" path="res://scenes/entities/chasing_horde.tscn" id="4_sxapu"]
 
 [sub_resource type="Environment" id="Environment_root"]
 background_mode = 1
@@ -13,9 +14,6 @@ tonemap_mode = 2
 fog_enabled = true
 fog_light_color = Color(0.06, 0.06, 0.1, 1)
 fog_density = 0.02
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_horde"]
-size = Vector3(20, 10, 2)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3l0jt"]
 shader = ExtResource("4_cet4m")
@@ -44,12 +42,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -1)
 move_speed = 10.0
 max_camera_tilt_deg = 2.5
 
-[node name="ChasingHorde" type="Area3D" parent="." unique_id=1142402683]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="ChasingHorde" unique_id=2041840239]
-shape = SubResource("BoxShape3D_horde")
-
 [node name="CanvasShader" type="CanvasLayer" parent="." unique_id=100528168]
 process_mode = 4
 layer = 200
@@ -62,3 +54,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="ChasingHorde" parent="." unique_id=1762314424 instance=ExtResource("4_sxapu")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.3194847)

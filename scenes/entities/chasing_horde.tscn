@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://c5t37kkkexxoh"]
+
+[ext_resource type="Script" uid="uid://byduu8pk8qgyh" path="res://scripts/entities/chasing_horde.gd" id="1_dxl50"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ixeti"]
+transparency = 1
+cull_mode = 2
+albedo_color = Color(0.8, 0.15, 0.15, 0.85)
+
+[sub_resource type="QuadMesh" id="QuadMesh_uy8q7"]
+material = SubResource("StandardMaterial3D_ixeti")
+size = Vector2(10, 3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_dxl50"]
+size = Vector3(3, 3, 1)
+
+[node name="ChasingHorde" type="Area3D" unique_id=1762314424]
+script = ExtResource("1_dxl50")
+speed = 8.0
+
+[node name="Visual" type="MeshInstance3D" parent="." unique_id=1050705520]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+mesh = SubResource("QuadMesh_uy8q7")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1328855638]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0.5)
+shape = SubResource("BoxShape3D_dxl50")

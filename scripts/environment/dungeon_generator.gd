@@ -61,6 +61,11 @@ var last_ceiling_y: float = -1.0 # Ceiling Y level of previous row to detect hei
 var floor_grid: Dictionary = {} # Vector3i -> Node3D
 var wall_grid: Dictionary = {}  # Vector3i -> Node3D
 
+# A* Pathfinding graph for ChasingHorde navigation
+var astar := AStar3D.new()
+var grid_to_astar_id: Dictionary = {} # Vector3i -> int
+var astar_id_counter: int = 1
+
 var active_corridors_container: Node3D
 var player_ref: Node3D
 
@@ -133,6 +138,7 @@ func spawn_floor_tile(tile_inst: Node3D, pos: Vector3, angle_deg: float) -> void
 	tile_inst.rotation_degrees.y = angle_deg
 	active_corridors_container.add_child(tile_inst)
 	floor_grid[key] = tile_inst
+	_register_floor_tile_astar(key)
 
 	# Rule 2: Karo koyarken üstünde duvar varsa o duvarı yıksın (altındaki duvarı silmesin)
 	if wall_grid.has(key):
@@ -141,6 +147,45 @@ func spawn_floor_tile(tile_inst: Node3D, pos: Vector3, angle_deg: float) -> void
 			if existing_wall.position.y >= snapped_pos.y:
 				existing_wall.queue_free()
 				wall_grid.erase(key)
+
+func _register_floor_tile_astar(key: Vector3i) -> void:
+	if grid_to_astar_id.has(key):
+		return
+
+	var point_id = astar_id_counter
+	astar_id_counter += 1
+	grid_to_astar_id[key] = point_id
+	astar.add_point(point_id, Vector3(key.x, key.y, key.z))
+
+	# Connect to existing neighbor floor tiles in 3D grid
+	var neighbor_offsets = [
+		Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
+		Vector3i(0, 0, 1), Vector3i(0, 0, -1),
+		# Stair step variations (+1 / -1 Y)
+		Vector3i(1, 1, 0), Vector3i(-1, 1, 0),
+		Vector3i(0, 1, 1), Vector3i(0, 1, -1),
+		Vector3i(1, -1, 0), Vector3i(-1, -1, 0),
+		Vector3i(0, -1, 1), Vector3i(0, -1, -1)
+	]
+	for offset in neighbor_offsets:
+		var n_key = key + offset
+		if grid_to_astar_id.has(n_key):
+			var n_id = grid_to_astar_id[n_key]
+			if not astar.are_points_connected(point_id, n_id):
+				astar.connect_points(point_id, n_id)
+
+## Returns shortest A* path through floor/stair tile graph
+func get_astar_path(from_pos: Vector3, to_pos: Vector3) -> PackedVector3Array:
+	if astar.get_point_count() == 0:
+		return PackedVector3Array()
+
+	var id_from = astar.get_closest_point(from_pos)
+	var id_to = astar.get_closest_point(to_pos)
+
+	if id_from == -1 or id_to == -1:
+		return PackedVector3Array()
+
+	return astar.get_point_path(id_from, id_to)
 
 func try_spawn_wall_bottom_tile(wall_pos: Vector3, floor_y_pos: float, angle_deg: float) -> void:
 	var key = get_grid_key(Vector3(wall_pos.x, floor_y_pos, wall_pos.z))
@@ -497,11 +542,15 @@ func cleanup_passed_tiles() -> void:
 
 	var player_pos = player_ref.global_position
 
-	# Clean up despawned nodes from dictionaries
+	# Clean up despawned nodes from dictionaries & AStar3D graph
 	var floor_keys = floor_grid.keys()
 	for k in floor_keys:
 		var node = floor_grid[k]
 		if not is_instance_valid(node) or node.is_queued_for_deletion():
+			if grid_to_astar_id.has(k):
+				var p_id = grid_to_astar_id[k]
+				astar.remove_point(p_id)
+				grid_to_astar_id.erase(k)
 			floor_grid.erase(k)
 
 	var wall_keys = wall_grid.keys()

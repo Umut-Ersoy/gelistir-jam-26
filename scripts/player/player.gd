@@ -48,9 +48,10 @@ var camera_pitch: float = 0.0
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	current_hp = max_hp
-	if GameManager:
-		GameManager.current_hp = current_hp
-		GameManager.max_hp = max_hp
+	var gm = get_node_or_null("/root/GameManager")
+	if gm:
+		gm.current_hp = current_hp
+		gm.max_hp = max_hp
 	update_hp_ui()
 	total_game_time = 0.0
 	update_timer_ui()
@@ -108,8 +109,9 @@ func _physics_process(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	if state_machine and state_machine.current_state_type != PlayerStateMachine.StateType.DEAD:
-		if GameManager:
-			GameManager.update_score(delta)
+		var gm = get_node_or_null("/root/GameManager")
+		if gm:
+			gm.update_score(delta)
 		total_game_time += delta
 		update_timer_ui()
 
@@ -270,8 +272,9 @@ func attack() -> void:
 		return # On attack cooldown
 
 	# Rewind BGM 1 second as specified in technical document
-	if SoundManager:
-		SoundManager.rewind_bgm(1.0)
+	var sm = get_node_or_null("/root/SoundManager")
+	if sm and sm.has_method("rewind_bgm"):
+		sm.rewind_bgm(1.0)
 
 	if attack_raycast and attack_raycast.is_colliding():
 		var collider = attack_raycast.get_collider()
@@ -288,8 +291,9 @@ func take_damage(amount: int) -> void:
 		return
 
 	current_hp -= amount
-	if GameManager:
-		GameManager.current_hp = current_hp
+	var gm = get_node_or_null("/root/GameManager")
+	if gm:
+		gm.current_hp = current_hp
 	update_hp_ui()
 
 	if current_hp <= 0:
@@ -300,19 +304,20 @@ func take_damage(amount: int) -> void:
 
 func heal(amount: int) -> void:
 	current_hp = min(max_hp, current_hp + amount)
-	if GameManager:
-		GameManager.current_hp = current_hp
+	var gm = get_node_or_null("/root/GameManager")
+	if gm:
+		gm.current_hp = current_hp
 	update_hp_ui()
 
 func instant_death() -> void:
 	current_hp = 0
-	if GameManager:
-		GameManager.current_hp = 0
+	var gm = get_node_or_null("/root/GameManager")
+	if gm:
+		gm.current_hp = 0
+		gm.trigger_game_over()
 	update_hp_ui()
 	state_machine.transition_to(PlayerStateMachine.StateType.DEAD)
 	velocity = Vector3.ZERO
-	if GameManager:
-		GameManager.trigger_game_over()
 
 func update_hp_ui() -> void:
 	if not hp_rect:
@@ -342,7 +347,7 @@ func _on_area_entered(area: Area3D) -> void:
 	if area.get_script():
 		script_name = str(area.get_script().get_global_name())
 
-	if script_name == "FrontGuard" or area.name.contains("FrontGuard"):
+	if script_name == "FrontGuard" or area.name.contains("FrontGuard") or script_name == "StandingEnemy" or area.name.contains("StandingEnemy") or area.get_parent() is StandingEnemy:
 		take_damage(1)
 	elif script_name == "TrapArea" or area.name.contains("TrapArea") or area.name.contains("Trap"):
 		if area.get("is_instakill") == true:

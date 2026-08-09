@@ -69,17 +69,43 @@ func _init() -> void:
 	else:
 		print("Warning: res://scenes/player/player.tscn not found!")
 
-	# 4. ChasingHorde (Area3D - KillZone placeholder)
-	var chasing_horde = Area3D.new()
-	chasing_horde.name = "ChasingHorde"
-	chasing_horde.position = Vector3(0, 0, 10.0) # Positioned behind starting player position
-	var horde_collision = CollisionShape3D.new()
-	horde_collision.name = "CollisionShape3D"
-	var horde_box = BoxShape3D.new()
-	horde_box.size = Vector3(20.0, 10.0, 2.0)
-	horde_collision.shape = horde_box
-	chasing_horde.add_child(horde_collision)
-	root_scene.add_child(chasing_horde)
+	# 4. ChasingHorde Instance (or build with script & placeholder plane)
+	var horde_scene = load("res://scenes/entities/chasing_horde.tscn")
+	if horde_scene:
+		var horde_instance = horde_scene.instantiate()
+		horde_instance.name = "ChasingHorde"
+		horde_instance.position = Vector3(0, 0, 10.0) # Positioned behind starting player position
+		root_scene.add_child(horde_instance)
+	else:
+		var chasing_horde = Area3D.new()
+		chasing_horde.name = "ChasingHorde"
+		chasing_horde.position = Vector3(0, 0, 10.0)
+		var horde_script = load("res://scripts/entities/chasing_horde.gd")
+		if horde_script:
+			chasing_horde.set_script(horde_script)
+
+		var visual = MeshInstance3D.new()
+		visual.name = "Visual"
+		var quad_mesh = QuadMesh.new()
+		quad_mesh.size = Vector2(20.0, 10.0)
+		visual.mesh = quad_mesh
+		visual.position = Vector3(0, 5.0, 0)
+		var mat = StandardMaterial3D.new()
+		mat.albedo_color = Color(0.8, 0.15, 0.15, 0.85)
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		quad_mesh.material = mat
+		chasing_horde.add_child(visual)
+
+		var horde_collision = CollisionShape3D.new()
+		horde_collision.name = "CollisionShape3D"
+		var horde_box = BoxShape3D.new()
+		horde_box.size = Vector3(20.0, 10.0, 2.0)
+		horde_collision.shape = horde_box
+		horde_collision.position = Vector3(0, 5.0, 0)
+		chasing_horde.add_child(horde_collision)
+
+		root_scene.add_child(chasing_horde)
 
 	# Set ownership for scene serialization
 	set_owner_recursive(root_scene, root_scene)
