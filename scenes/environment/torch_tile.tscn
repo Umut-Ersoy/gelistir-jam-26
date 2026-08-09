@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://bw71ulk15babp"]
+
+[ext_resource type="Script" uid="uid://dgx3f2djwygc4" path="res://scripts/environment/torch_tile.gd" id="1_torchtile"]
+[ext_resource type="PackedScene" uid="uid://dc6ywsftyyhmb" path="res://assets/meshes/environment/torch.glb" id="2_torch"]
+
+[node name="TorchTile" type="Node3D" unique_id=1935611612]
+script = ExtResource("1_torchtile")
+
+[node name="torch" parent="." unique_id=43236804 instance=ExtResource("2_torch")]
+transform = Transform3D(1, 0, 1.7484555e-07, 0, 1, 0, -1.7484555e-07, 0, 1, -0.5, 0, 0)
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=638119566]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.90000004, 0.5, 0)
+light_color = Color(1, 0.65, 0.25, 1)
+light_energy = 2.0
+omni_range = 7.0

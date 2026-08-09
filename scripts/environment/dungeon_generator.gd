@@ -27,6 +27,9 @@ class_name DungeonGenerator
 @export var min_wall_height: int = 3 # Minimum total wall height in tiles (must be >= 3: 1 bottom + 1 mid + 1 top)
 @export var max_wall_height: int = 6 # Maximum total wall height in tiles
 
+@export_group("Torch Settings")
+@export var torch_distance: int = 6
+
 # Scene resources
 var floor_tile_scene: PackedScene
 var wall_bottom_tile_scene: PackedScene
@@ -36,6 +39,7 @@ var ceiling_tile_scene: PackedScene
 var ceiling_stairs_tile_scene: PackedScene
 var stairs_tile_scene: PackedScene
 var base_trap_scene: PackedScene
+var torch_tile_scene: PackedScene
 
 # Initial Direction & Generator State
 var initial_angle_deg: float = 0.0
@@ -89,6 +93,8 @@ func _ready() -> void:
 		stairs_tile_scene = load("res://scenes/environment/stairs_tile.tscn")
 	if ResourceLoader.exists("res://scenes/traps/base_trap.tscn"):
 		base_trap_scene = load("res://scenes/traps/base_trap.tscn")
+	if ResourceLoader.exists("res://scenes/environment/torch_tile.tscn"):
+		torch_tile_scene = load("res://scenes/environment/torch_tile.tscn")
 
 	active_corridors_container = get_node_or_null("ActiveCorridors")
 	if not active_corridors_container:
@@ -272,6 +278,9 @@ func generate_next_segment() -> void:
 		var center_pos = start_segment_pos + current_forward_dir * (int(float(corridor_length) / 2.0) + 2.0)
 		spawn_weighted_trap(center_pos, current_y, right_dir, current_angle_deg, corridor_length, active_width)
 
+	# 3b. Torch Spawning (After traps)
+	spawn_corridor_torches(start_segment_pos, current_forward_dir, right_dir, current_angle_deg, corridor_length, active_width, has_mid_stair, mid_stair_index, mid_stair_dir)
+
 	# 4. End-of-Corridor Staircase & Square Landing Platform Check
 	if randf() < end_stair_chance:
 		generate_end_staircase(right_dir, active_width)
@@ -350,6 +359,43 @@ func spawn_corridor_row(center_pos: Vector3, y_pos: float, fwd_dir: Vector3, rig
 
 	var right_wall_pos = center_pos + right_dir * (half_w + 0.5) + Vector3(0, y_pos + wall_y_offset, 0)
 	try_spawn_wall_stacked(right_wall_pos, y_pos, angle_deg, stair_wall_h)
+
+func spawn_corridor_torches(start_pos: Vector3, fwd_dir: Vector3, right_dir: Vector3, angle_deg: float, corridor_len: int, active_width: int, has_mid_stair: bool, mid_stair_index: int, mid_stair_dir: int) -> void:
+	if not torch_tile_scene or torch_distance <= 0:
+		return
+
+	var half_w = float(active_width) / 2.0
+	var start_offset = int(float(torch_distance) / 2.0)
+
+	var step_idx = start_offset
+	while step_idx < corridor_len:
+		var step_y = current_y
+		if has_mid_stair and step_idx >= mid_stair_index:
+			step_y += mid_stair_dir
+
+		var row_pos = start_pos + fwd_dir * float(step_idx + 1)
+		row_pos = Vector3(round(row_pos.x), round(row_pos.y), round(row_pos.z))
+
+		var is_stair_step = (has_mid_stair and step_idx == mid_stair_index)
+		var wall_y_offset: float = 0.5
+		if is_stair_step and mid_stair_dir == 1:
+			wall_y_offset = -0.5
+
+		# 1. Left Wall Torch (1m above bottom wall tile)
+		var left_wall_pos = row_pos + right_dir * (-half_w - 0.5) + Vector3(0, step_y + wall_y_offset + 1.0, 0)
+		var left_torch = torch_tile_scene.instantiate() as Node3D
+		left_torch.position = Vector3(round(left_wall_pos.x), left_wall_pos.y, round(left_wall_pos.z))
+		left_torch.rotation_degrees.y = angle_deg + 180.0
+		active_corridors_container.add_child(left_torch)
+
+		# 2. Right Wall Torch (1m above bottom wall tile)
+		var right_wall_pos = row_pos + right_dir * (half_w + 0.5) + Vector3(0, step_y + wall_y_offset + 1.0, 0)
+		var right_torch = torch_tile_scene.instantiate() as Node3D
+		right_torch.position = Vector3(round(right_wall_pos.x), right_wall_pos.y, round(right_wall_pos.z))
+		right_torch.rotation_degrees.y = angle_deg
+		active_corridors_container.add_child(right_torch)
+
+		step_idx += torch_distance
 
 func generate_end_staircase(right_dir: Vector3, active_width: int) -> void:
 	var stairs_length = randi_range(min_stairs_length, max_stairs_length)
