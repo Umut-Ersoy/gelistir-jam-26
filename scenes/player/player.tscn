@@ -4,6 +4,8 @@
 [ext_resource type="Script" uid="uid://cup5fwte8bnr0" path="res://core/state_machine/state_machine.gd" id="2_statemachine"]
 [ext_resource type="Texture2D" uid="uid://btsh1w8gj16k3" path="res://assets/ui/hand_anim_idle.png" id="3_gmlin"]
 [ext_resource type="Texture2D" uid="uid://bgqbo7w5yy1nl" path="res://assets/ui/ui_hp.3.png" id="4_lvxji"]
+[ext_resource type="Texture2D" uid="uid://dakusembbatj4" path="res://assets/ui/ui_clock.png" id="5_p47bc"]
+[ext_resource type="FontFile" uid="uid://b5lor6dsfdc6c" path="res://assets/fonts/font_casio.otf" id="6_75vfm"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.4
@@ -801,9 +803,9 @@ one_shot = true
 [node name="AttackTimer" type="Timer" parent="." unique_id=1713142192]
 one_shot = true
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=2108769795]
+[node name="CanvasShader" type="CanvasLayer" parent="." unique_id=2108769795]
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CanvasLayer" unique_id=1906729338]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CanvasShader" unique_id=1906729338]
 position = Vector2(809, 1028)
 rotation = -0.23212878
 scale = Vector2(0.71481484, 0.71481484)
@@ -812,7 +814,31 @@ animation = &"idle"
 autoplay = "idle"
 frame_progress = 0.10427705
 
-[node name="Hp" type="TextureRect" parent="CanvasLayer" unique_id=1524837865]
+[node name="Hp" type="TextureRect" parent="CanvasShader" unique_id=1524837865]
 offset_right = 40.0
 offset_bottom = 40.0
 texture = ExtResource("4_lvxji")
+
+[node name="CasioF91W" type="TextureRect" parent="CanvasShader" unique_id=840357168]
+offset_right = 1920.0
+offset_bottom = 1080.0
+texture = ExtResource("5_p47bc")
+
+[node name="CanvasNoShader" type="CanvasLayer" parent="." unique_id=595838777]
+layer = 500
+
+[node name="Label" type="Label" parent="CanvasNoShader" unique_id=1295800407]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -267.0
+offset_top = 161.0
+offset_right = -126.0
+offset_bottom = 229.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(2.4065375e-08, 0.28081936, 0.21515778, 1)
+theme_override_fonts/font = ExtResource("6_75vfm")
+theme_override_font_sizes/font_size = 64
+text = "00:00"
+horizontal_alignment = 1
+vertical_alignment = 1

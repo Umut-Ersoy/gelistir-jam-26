@@ -25,16 +25,17 @@ var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 @onready var camera: Camera3D = $Camera3D
 @onready var hand_weapon: Node3D = $Camera3D/HandWeapon
-@onready var animated_sprite: AnimatedSprite3D = $Camera3D/HandWeapon/AnimatedSprite3D
 @onready var attack_raycast: RayCast3D = $Camera3D/HandWeapon/AttackRayCast
 @onready var shapecast_left: ShapeCast3D = $ShapeCastLeft
 @onready var shapecast_right: ShapeCast3D = $ShapeCastRight
 @onready var state_machine: PlayerStateMachine = $PlayerStateMachine
 @onready var get_hit_timer: Timer = $GetHitTimer
 @onready var attack_timer: Timer = $AttackTimer
-@onready var hp_rect: TextureRect = $CanvasLayer/Hp
+@onready var hp_rect: TextureRect = $CanvasShader/Hp
+@onready var timer_label: Label = $CanvasNoShader/Label
 
 # Internal variables
+var total_game_time: float = 0.0
 var default_capsule_height: float = 2.0
 var default_capsule_position_y: float = 1.0
 var default_camera_position_y: float = 1.5
@@ -51,6 +52,8 @@ func _ready() -> void:
 		GameManager.current_hp = current_hp
 		GameManager.max_hp = max_hp
 	update_hp_ui()
+	total_game_time = 0.0
+	update_timer_ui()
 
 	if camera:
 		default_camera_position_y = camera.position.y
@@ -104,8 +107,11 @@ func _physics_process(delta: float) -> void:
 	update_camera_tilt(delta)
 
 func _process(delta: float) -> void:
-	if GameManager and state_machine.current_state_type != PlayerStateMachine.StateType.DEAD:
-		GameManager.update_score(delta)
+	if state_machine and state_machine.current_state_type != PlayerStateMachine.StateType.DEAD:
+		if GameManager:
+			GameManager.update_score(delta)
+		total_game_time += delta
+		update_timer_ui()
 
 func update_state_logic(delta: float) -> void:
 	var current_state = state_machine.current_state_type
@@ -319,6 +325,14 @@ func update_hp_ui() -> void:
 			hp_rect.texture = null
 	else:
 		hp_rect.texture = null
+
+func update_timer_ui() -> void:
+	if not timer_label:
+		return
+	var total_seconds: int = int(total_game_time)
+	var minutes: int = total_seconds / 60
+	var seconds: int = total_seconds % 60
+	timer_label.text = "%02d:%02d" % [minutes, seconds]
 
 func _on_area_entered(area: Area3D) -> void:
 	if not area:
