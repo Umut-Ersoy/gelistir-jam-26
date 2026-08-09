@@ -53,6 +53,7 @@ shape = SubResource("BoxShape3D_horde")
 [node name="CanvasShader" type="CanvasLayer" parent="." unique_id=100528168]
 process_mode = 4
 layer = 200
+visible = false
 follow_viewport_enabled = true
 
 [node name="ColorRect" type="ColorRect" parent="CanvasShader" unique_id=731233471]

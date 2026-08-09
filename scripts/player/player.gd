@@ -32,6 +32,7 @@ var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9
 @onready var state_machine: PlayerStateMachine = $PlayerStateMachine
 @onready var get_hit_timer: Timer = $GetHitTimer
 @onready var attack_timer: Timer = $AttackTimer
+@onready var hp_rect: TextureRect = $CanvasLayer/Hp
 
 # Internal variables
 var default_capsule_height: float = 2.0
@@ -49,6 +50,7 @@ func _ready() -> void:
 	if GameManager:
 		GameManager.current_hp = current_hp
 		GameManager.max_hp = max_hp
+	update_hp_ui()
 
 	if camera:
 		default_camera_position_y = camera.position.y
@@ -282,6 +284,7 @@ func take_damage(amount: int) -> void:
 	current_hp -= amount
 	if GameManager:
 		GameManager.current_hp = current_hp
+	update_hp_ui()
 
 	if current_hp <= 0:
 		instant_death()
@@ -289,14 +292,33 @@ func take_damage(amount: int) -> void:
 		get_hit_timer.start(0.2)
 		state_machine.transition_to(PlayerStateMachine.StateType.GET_HIT)
 
+func heal(amount: int) -> void:
+	current_hp = min(max_hp, current_hp + amount)
+	if GameManager:
+		GameManager.current_hp = current_hp
+	update_hp_ui()
+
 func instant_death() -> void:
 	current_hp = 0
 	if GameManager:
 		GameManager.current_hp = 0
+	update_hp_ui()
 	state_machine.transition_to(PlayerStateMachine.StateType.DEAD)
 	velocity = Vector3.ZERO
 	if GameManager:
 		GameManager.trigger_game_over()
+
+func update_hp_ui() -> void:
+	if not hp_rect:
+		return
+	if current_hp > 0:
+		var path = "res://assets/ui/ui_hp.%d.png" % current_hp
+		if ResourceLoader.exists(path):
+			hp_rect.texture = load(path)
+		else:
+			hp_rect.texture = null
+	else:
+		hp_rect.texture = null
 
 func _on_area_entered(area: Area3D) -> void:
 	if not area:

@@ -260,6 +260,7 @@ func generate_next_segment() -> void:
 		try_spawn_wall_stacked(back_wall_pos, current_y, current_angle_deg - 90.0)
 
 	# 2. Generate corridor segment
+	var start_y = current_y # Save BEFORE mid_stair update — needed for torch wall_grid key lookup
 	for i in range(corridor_length):
 		current_position += current_forward_dir * 1.0
 		current_position = Vector3(round(current_position.x), round(current_position.y), round(current_position.z))
@@ -278,8 +279,8 @@ func generate_next_segment() -> void:
 		var center_pos = start_segment_pos + current_forward_dir * (int(float(corridor_length) / 2.0) + 2.0)
 		spawn_weighted_trap(center_pos, current_y, right_dir, current_angle_deg, corridor_length, active_width)
 
-	# 3b. Torch Spawning (After traps)
-	spawn_corridor_torches(start_segment_pos, current_forward_dir, right_dir, current_angle_deg, corridor_length, active_width, has_mid_stair, mid_stair_index, mid_stair_dir)
+	# 3b. Torch Spawning (After traps) — pass start_y so key lookup matches wall_grid registration
+	spawn_corridor_torches(start_segment_pos, current_forward_dir, right_dir, current_angle_deg, corridor_length, active_width, has_mid_stair, mid_stair_index, mid_stair_dir, start_y)
 
 	# 4. End-of-Corridor Staircase & Square Landing Platform Check
 	if randf() < end_stair_chance:
@@ -360,16 +361,17 @@ func spawn_corridor_row(center_pos: Vector3, y_pos: float, fwd_dir: Vector3, rig
 	var right_wall_pos = center_pos + right_dir * (half_w + 0.5) + Vector3(0, y_pos + wall_y_offset, 0)
 	try_spawn_wall_stacked(right_wall_pos, y_pos, angle_deg, stair_wall_h)
 
-func spawn_corridor_torches(start_pos: Vector3, fwd_dir: Vector3, right_dir: Vector3, angle_deg: float, corridor_len: int, active_width: int, has_mid_stair: bool, mid_stair_index: int, mid_stair_dir: int) -> void:
+func spawn_corridor_torches(start_pos: Vector3, fwd_dir: Vector3, right_dir: Vector3, angle_deg: float, corridor_len: int, active_width: int, has_mid_stair: bool, mid_stair_index: int, mid_stair_dir: int, start_y: float) -> void:
 	if not torch_tile_scene or torch_distance <= 0:
 		return
 
 	var half_w = float(active_width) / 2.0
-	var start_offset = int(float(torch_distance) / 2.0)
+	var start_offset = int(float(torch_distance) / 2.0) + 1 # 1m further inside corridor
 
 	var step_idx = start_offset
 	while step_idx < corridor_len:
-		var step_y = current_y
+		# Use start_y (captured before mid_stair update) — matches wall_grid registration keys
+		var step_y = start_y
 		if has_mid_stair and step_idx >= mid_stair_index:
 			step_y += mid_stair_dir
 
@@ -381,19 +383,23 @@ func spawn_corridor_torches(start_pos: Vector3, fwd_dir: Vector3, right_dir: Vec
 		if is_stair_step and mid_stair_dir == 1:
 			wall_y_offset = -0.5
 
-		# 1. Left Wall Torch (1m above bottom wall tile)
+		# 1. Left Wall Torch (1m above bottom wall tile, only if wall exists)
 		var left_wall_pos = row_pos + right_dir * (-half_w - 0.5) + Vector3(0, step_y + wall_y_offset + 1.0, 0)
-		var left_torch = torch_tile_scene.instantiate() as Node3D
-		left_torch.position = Vector3(round(left_wall_pos.x), left_wall_pos.y, round(left_wall_pos.z))
-		left_torch.rotation_degrees.y = angle_deg + 180.0
-		active_corridors_container.add_child(left_torch)
+		var left_key = get_grid_key(Vector3(left_wall_pos.x, step_y, left_wall_pos.z))
+		if wall_grid.has(left_key) and is_instance_valid(wall_grid[left_key]):
+			var left_torch = torch_tile_scene.instantiate() as Node3D
+			left_torch.position = Vector3(round(left_wall_pos.x), left_wall_pos.y, round(left_wall_pos.z))
+			left_torch.rotation_degrees.y = angle_deg + 180.0
+			active_corridors_container.add_child(left_torch)
 
-		# 2. Right Wall Torch (1m above bottom wall tile)
+		# 2. Right Wall Torch (1m above bottom wall tile, only if wall exists)
 		var right_wall_pos = row_pos + right_dir * (half_w + 0.5) + Vector3(0, step_y + wall_y_offset + 1.0, 0)
-		var right_torch = torch_tile_scene.instantiate() as Node3D
-		right_torch.position = Vector3(round(right_wall_pos.x), right_wall_pos.y, round(right_wall_pos.z))
-		right_torch.rotation_degrees.y = angle_deg
-		active_corridors_container.add_child(right_torch)
+		var right_key = get_grid_key(Vector3(right_wall_pos.x, step_y, right_wall_pos.z))
+		if wall_grid.has(right_key) and is_instance_valid(wall_grid[right_key]):
+			var right_torch = torch_tile_scene.instantiate() as Node3D
+			right_torch.position = Vector3(round(right_wall_pos.x), right_wall_pos.y, round(right_wall_pos.z))
+			right_torch.rotation_degrees.y = angle_deg
+			active_corridors_container.add_child(right_torch)
 
 		step_idx += torch_distance
 
@@ -408,8 +414,8 @@ func generate_end_staircase(right_dir: Vector3, active_width: int) -> void:
 		current_y += stair_dir
 		spawn_corridor_row(current_position, current_y, current_forward_dir, right_dir, current_angle_deg, true, active_width, stair_dir)
 
-	# 2. Build Square Landing Platform at end of staircase
-	build_landing_platform(right_dir, active_width)
+	# 2. Build Square Landing Platform at end of staircase (width = active_width + 2)
+	build_landing_platform(right_dir, active_width + 2)
 
 func build_landing_platform(right_dir: Vector3, active_width: int) -> void:
 	# Build Square Landing Platform (size = active_width x active_width)
