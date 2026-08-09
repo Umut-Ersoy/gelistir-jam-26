@@ -19,6 +19,7 @@ class_name DungeonGenerator
 
 @export_group("Traps")
 @export var trap_chance: float = 0.6
+@export var cobweb_chance: float = 0.3 # Probability of spawning a cobweb trap instead of a normal trap
 @export var weight_option_a: float = 40.0 # 1-block gap on left or right
 @export var weight_option_b: float = 30.0 # 1-block gap on both sides
 @export var weight_option_c: float = 30.0 # Full width trap + WallRunSurface Area3D
@@ -30,6 +31,9 @@ class_name DungeonGenerator
 @export_group("Torch Settings")
 @export var torch_distance: int = 6
 
+@export_group("Standing Enemy Settings")
+@export var standing_enemy_chance: float = 0.4 # Chance to spawn standing enemy at corridor entry and exit
+
 # Scene resources
 var floor_tile_scene: PackedScene
 var wall_bottom_tile_scene: PackedScene
@@ -40,6 +44,8 @@ var ceiling_stairs_tile_scene: PackedScene
 var stairs_tile_scene: PackedScene
 var base_trap_scene: PackedScene
 var torch_tile_scene: PackedScene
+var cobweb_trap_scene: PackedScene
+var standing_enemy_scenes: Array[PackedScene] = []
 
 # Initial Direction & Generator State
 var initial_angle_deg: float = 0.0
@@ -98,8 +104,12 @@ func _ready() -> void:
 		stairs_tile_scene = load("res://scenes/environment/stairs_tile.tscn")
 	if ResourceLoader.exists("res://scenes/traps/base_trap.tscn"):
 		base_trap_scene = load("res://scenes/traps/base_trap.tscn")
+	if ResourceLoader.exists("res://scenes/traps/cobweb_trap.tscn"):
+		cobweb_trap_scene = load("res://scenes/traps/cobweb_trap.tscn")
 	if ResourceLoader.exists("res://scenes/environment/torch_tile.tscn"):
 		torch_tile_scene = load("res://scenes/environment/torch_tile.tscn")
+
+	_index_standing_enemies()
 
 	active_corridors_container = get_node_or_null("ActiveCorridors")
 	if not active_corridors_container:
@@ -119,10 +129,10 @@ func _process(_delta: float) -> void:
 		if not player_ref:
 			return
 
-	# Distance check to generate ahead of player with frame cap to prevent freezes
+	# Distance check to generate ahead of player using distance_to
 	var iterations = 0
-	var max_iterations_per_frame = 5
-	while iterations < max_iterations_per_frame and current_position.distance_to(player_ref.global_position) < (spawn_distance_ahead * 1.5):
+	var max_iterations_per_frame = 50
+	while current_position.distance_to(player_ref.global_position) < spawn_distance_ahead and iterations < max_iterations_per_frame:
 		generate_next_segment()
 		iterations += 1
 
@@ -206,7 +216,51 @@ func try_spawn_wall_bottom_tile(wall_pos: Vector3, floor_y_pos: float, angle_deg
 	active_corridors_container.add_child(wall_tile)
 	wall_grid[key] = wall_tile
 
-# Spawns a full stacked wall column (bottom + mid layers + top) at the given position.
+func _index_standing_enemies() -> void:
+	standing_enemy_scenes.clear()
+	var dir_path = "res://scenes/entities/standing_enemies/"
+	var dir = DirAccess.open(dir_path)
+	if not dir:
+		return
+
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with(".tscn"):
+			var full_path = dir_path + file_name
+			var scene = load(full_path) as PackedScene
+			if scene:
+				standing_enemy_scenes.append(scene)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+
+# Spawns standing enemies at corridor entrance and exit at the center of corridor width
+func try_spawn_standing_enemies(start_pos: Vector3, start_y: float, end_y: float, fwd_dir: Vector3, _right_dir: Vector3, angle_deg: float, _active_width: int, corridor_length: int) -> void:
+	if standing_enemy_scenes.is_empty() or standing_enemy_chance <= 0.0:
+		return
+
+	# 1. Entrance Spawn Check (Center of corridor width)
+	if randf() < standing_enemy_chance:
+		var entry_pos = start_pos + fwd_dir * 1.0 + Vector3(0, start_y, 0)
+		_spawn_random_standing_enemy(entry_pos, angle_deg)
+
+	# 2. Exit Spawn Check (Center of corridor width)
+	if randf() < standing_enemy_chance:
+		var exit_pos = start_pos + fwd_dir * float(corridor_length) + Vector3(0, end_y, 0)
+		_spawn_random_standing_enemy(exit_pos, angle_deg)
+
+func _spawn_random_standing_enemy(pos: Vector3, angle_deg: float) -> void:
+	if standing_enemy_scenes.is_empty():
+		return
+
+	var chosen_scene: PackedScene = standing_enemy_scenes[randi() % standing_enemy_scenes.size()]
+	if not chosen_scene:
+		return
+
+	var enemy_inst = chosen_scene.instantiate() as Node3D
+	enemy_inst.position = Vector3(round(pos.x), pos.y, round(pos.z))
+	enemy_inst.rotation_degrees.y = angle_deg
+	active_corridors_container.add_child(enemy_inst)
 # active_wall_height (or wall_height_override) determines the total number of tiles:
 #   height=3 → 1 bottom + 1 mid + 1 top
 #   height=6 → 1 bottom + 4 mid + 1 top
@@ -272,6 +326,8 @@ func get_next_turn_angle() -> int:
 	return selected_turn
 
 func generate_next_segment() -> void:
+	var was_first_segment = is_first_corridor
+
 	# 1. Determine direction for new corridor
 	var relative_turn = get_next_turn_angle()
 	current_angle_deg = initial_angle_deg + relative_turn
@@ -319,10 +375,13 @@ func generate_next_segment() -> void:
 	if has_mid_stair:
 		current_y += mid_stair_dir
 
-	# 3. Trap Spawning
+	# 3. Trap / Cobweb Spawning
 	if randf() < trap_chance:
 		var center_pos = start_segment_pos + current_forward_dir * (int(float(corridor_length) / 2.0) + 2.0)
-		spawn_weighted_trap(center_pos, current_y, right_dir, current_angle_deg, corridor_length, active_width)
+		if cobweb_trap_scene and randf() < cobweb_chance:
+			spawn_cobweb_trap(center_pos, current_y, current_angle_deg, corridor_length, active_width, active_wall_height)
+		else:
+			spawn_weighted_trap(center_pos, current_y, right_dir, current_angle_deg, corridor_length, active_width)
 
 	# 3b. Torch Spawning (After traps) — pass start_y so key lookup matches wall_grid registration
 	spawn_corridor_torches(start_segment_pos, current_forward_dir, right_dir, current_angle_deg, corridor_length, active_width, has_mid_stair, mid_stair_index, mid_stair_dir, start_y)
@@ -332,6 +391,10 @@ func generate_next_segment() -> void:
 		generate_end_staircase(right_dir, active_width)
 	else:
 		build_landing_platform(right_dir, active_width)
+
+	# 5. Standing Enemy Spawning (AFTER all other processes complete - skip on initial starting corridor)
+	if not was_first_segment:
+		try_spawn_standing_enemies(start_segment_pos, start_y, current_y, current_forward_dir, right_dir, current_angle_deg, active_width, corridor_length)
 
 func spawn_corridor_row(center_pos: Vector3, y_pos: float, fwd_dir: Vector3, right_dir: Vector3, angle_deg: float, is_stair_step: bool, active_width: int, stair_dir: int = 1) -> void:
 	var half_w = float(active_width) / 2.0
@@ -483,6 +546,21 @@ func build_landing_platform(right_dir: Vector3, active_width: int) -> void:
 	last_platform_size = active_width
 	has_platform = true
 
+func spawn_cobweb_trap(center_pos: Vector3, floor_y: float, angle_deg: float, _corridor_len: int, active_width: int, active_wall_h: int) -> void:
+	if not cobweb_trap_scene:
+		return
+
+	var cobweb_inst = cobweb_trap_scene.instantiate() as Node3D
+	# Position at center Y = floor_y + (active_wall_h / 2.0) so it sits on floor and reaches ceiling
+	var center_y = floor_y + (float(active_wall_h) / 2.0)
+	cobweb_inst.position = Vector3(round(center_pos.x), center_y, round(center_pos.z))
+	cobweb_inst.rotation_degrees.y = angle_deg
+
+	if cobweb_inst.has_method("setup_size"):
+		cobweb_inst.setup_size(float(active_width), float(active_wall_h))
+
+	active_corridors_container.add_child(cobweb_inst)
+
 func spawn_weighted_trap(center_pos: Vector3, y_pos: float, right_dir: Vector3, angle_deg: float, corridor_len: float, active_width: int) -> void:
 	if not base_trap_scene:
 		return
@@ -559,9 +637,9 @@ func cleanup_passed_tiles() -> void:
 		if not is_instance_valid(node) or node.is_queued_for_deletion():
 			wall_grid.erase(k)
 
+	var player_z = player_ref.global_position.z
 	for child in active_corridors_container.get_children():
 		if child is Node3D:
-			if child.global_position.distance_to(player_pos) > despawn_distance_behind:
-				var to_child = (child.global_position - player_pos).normalized()
-				if to_child.dot(initial_forward_dir) < -0.2:
-					child.queue_free()
+			var tile_z = child.global_position.z
+			if tile_z > player_z + despawn_distance_behind:
+				child.queue_free()

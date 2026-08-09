@@ -127,6 +127,15 @@ func stop_bgm() -> void:
 	if bgm_player:
 		bgm_player.stop()
 
+## Müziği duraklatır (pause).
+func pause_bgm() -> void:
+	if bgm_player:
+		bgm_player.stream_paused = true
+
+## Duraklatılan müziği devam ettirir (unpause).
+func unpause_bgm() -> void:
+	if bgm_player:
+		bgm_player.stream_paused = false
 
 ## Müziği devam ettirir / başlatır (mevcut bölümden).
 func resume_bgm() -> void:

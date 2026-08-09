@@ -1,17 +1,24 @@
 extends CharacterBody3D
 class_name Player
 
+@export_group("Health & Controls")
 @export var max_hp: int = 3
+@export var mouse_sensitivity: float = 0.003
+
+@export_group("Movement Settings")
 @export var move_speed: float = 7.0
 @export var jump_velocity: float = 6.0
 @export var slide_speed: float = 10.0
 @export var slide_duration: float = 0.8
 @export var wall_run_speed: float = 8.0
-@export var wall_run_max_time: float = 1.5
-@export var miss_cooldown: float = 5.0
-@export var hit_cooldown: float = 0.3
-@export var mouse_sensitivity: float = 0.003
+@export var wall_run_max_time: float = 2.0          # Maximum wall-run duration in seconds
 @export var fast_fall_speed: float = 18.0
+
+@export_group("Attack Settings")
+@export var attack_damage: int = 1
+@export var attack_windup_time: float = 0.2        # Windup time in seconds before dealing damage
+@export var attack_success_cooldown: float = 0.3    # Cooldown time in seconds after successful attack
+@export var attack_fail_cooldown: float = 5.0       # Cooldown time in seconds after missed attack
 
 @export_group("Camera Physics Effects")
 @export var max_camera_tilt_deg: float = 3.5 # Maximum camera tilt angle in degrees when strafing
@@ -33,6 +40,18 @@ var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9
 @onready var attack_timer: Timer = $AttackTimer
 @onready var hp_rect: TextureRect = $CanvasShader/Hp
 @onready var timer_label: Label = $CanvasNoShader/Label
+@onready var idle_sprite: AnimatedSprite2D = get_node_or_null("CanvasShader/Idle") as AnimatedSprite2D
+@onready var attack_sprite: AnimatedSprite2D = get_node_or_null("CanvasShader/Attack") as AnimatedSprite2D
+
+# Attack state variables
+var is_attacking: bool = false
+var is_attack_on_cooldown: bool = false
+var attack_windup_timer: float = 0.0
+var attack_cooldown_timer: float = 0.0
+var current_attack_targets: Array[StandingEnemy] = []
+var current_attack_is_success: bool = false
+var default_idle_position_y: float = 0.0
+var idle_tween: Tween = null
 
 # Internal variables
 var total_game_time: float = 0.0
@@ -43,6 +62,7 @@ var camera_height_diff: float = 0.3
 var slide_timer: float = 0.0
 var wall_run_timer: float = 0.0
 var wall_run_side: int = 0 # -1 left, 1 right
+var wall_run_count: int = 1 # Wall-run charges: reset to 1 on GROUNDED, 0 after WALL_RUN
 var camera_pitch: float = 0.0
 
 func _ready() -> void:
@@ -55,6 +75,14 @@ func _ready() -> void:
 	update_hp_ui()
 	total_game_time = 0.0
 	update_timer_ui()
+
+	if idle_sprite:
+		default_idle_position_y = idle_sprite.position.y
+		idle_sprite.visible = true
+	if attack_sprite:
+		attack_sprite.visible = false
+		if not attack_sprite.animation_finished.is_connected(_on_attack_animation_finished):
+			attack_sprite.animation_finished.connect(_on_attack_animation_finished)
 
 	if camera:
 		default_camera_position_y = camera.position.y
@@ -75,9 +103,14 @@ func _ready() -> void:
 	if hurtbox and hurtbox is Area3D:
 		(hurtbox as Area3D).area_entered.connect(_on_area_entered)
 
-func _on_state_changed(old_state: PlayerStateMachine.StateType, _new_state: PlayerStateMachine.StateType) -> void:
+func _on_state_changed(old_state: PlayerStateMachine.StateType, new_state: PlayerStateMachine.StateType) -> void:
 	if old_state == PlayerStateMachine.StateType.SLIDE:
 		restore_hitbox()
+
+	if new_state == PlayerStateMachine.StateType.GROUNDED:
+		wall_run_count = 1
+	elif new_state == PlayerStateMachine.StateType.WALL_RUN:
+		wall_run_count -= 1
 
 func _unhandled_input(event: InputEvent) -> void:
 	if state_machine and state_machine.current_state_type == PlayerStateMachine.StateType.DEAD:
@@ -103,6 +136,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	update_state_logic(delta)
+	update_attack_logic(delta)
 	apply_movement(delta)
 	move_and_slide()
 	update_camera_tilt(delta)
@@ -121,7 +155,7 @@ func update_state_logic(delta: float) -> void:
 	match current_state:
 		PlayerStateMachine.StateType.GROUNDED:
 			if not is_on_floor():
-				state_machine.transition_to(PlayerStateMachine.StateType.JUMP)
+				state_machine.transition_to(PlayerStateMachine.StateType.FALL)
 			elif Input.is_action_just_pressed("jump"):
 				velocity.y = jump_velocity
 				state_machine.transition_to(PlayerStateMachine.StateType.JUMP)
@@ -136,7 +170,17 @@ func update_state_logic(delta: float) -> void:
 				# Aerial fast fall / ground pound slide
 				velocity.y = -fast_fall_speed
 				enter_slide_state()
-			elif check_wall_run_available():
+			elif velocity.y < 0.0:
+				state_machine.transition_to(PlayerStateMachine.StateType.FALL)
+
+		PlayerStateMachine.StateType.FALL:
+			if is_on_floor():
+				restore_hitbox()
+				state_machine.transition_to(PlayerStateMachine.StateType.GROUNDED)
+			elif Input.is_action_just_pressed("slide"):
+				velocity.y = -fast_fall_speed
+				enter_slide_state()
+			elif wall_run_count > 0 and check_wall_run_available():
 				state_machine.transition_to(PlayerStateMachine.StateType.WALL_RUN)
 				wall_run_timer = wall_run_max_time
 
@@ -151,17 +195,19 @@ func update_state_logic(delta: float) -> void:
 				if is_on_floor():
 					state_machine.transition_to(PlayerStateMachine.StateType.GROUNDED)
 				else:
-					state_machine.transition_to(PlayerStateMachine.StateType.JUMP)
+					state_machine.transition_to(PlayerStateMachine.StateType.FALL)
 
 		PlayerStateMachine.StateType.WALL_RUN:
 			wall_run_timer -= delta
-			if Input.is_action_just_pressed("jump") or wall_run_timer <= 0.0 or not is_wall_run_still_valid():
-				# Push off wall on jump or exit
-				if Input.is_action_just_pressed("jump"):
-					velocity.y = jump_velocity
-					var push_direction = transform.basis.x * (-wall_run_side) * 4.0
-					velocity += push_direction
-					state_machine.transition_to(PlayerStateMachine.StateType.JUMP)
+			if is_on_floor():
+				state_machine.transition_to(PlayerStateMachine.StateType.GROUNDED)
+			elif Input.is_action_just_pressed("jump"):
+				velocity.y = jump_velocity
+				var push_direction = transform.basis.x * (-wall_run_side) * 4.0
+				velocity += push_direction
+				state_machine.transition_to(PlayerStateMachine.StateType.JUMP)
+			elif wall_run_timer <= 0.0 or not is_wall_run_still_valid():
+				state_machine.transition_to(PlayerStateMachine.StateType.FALL)
 
 		PlayerStateMachine.StateType.GET_HIT:
 			if get_hit_timer.is_stopped():
@@ -256,35 +302,134 @@ func check_wall_run_available() -> bool:
 	return false
 
 func is_wall_run_still_valid() -> bool:
-	if wall_run_side == -1 and shapecast_left and shapecast_left.is_colliding():
-		return true
-	if wall_run_side == 1 and shapecast_right and shapecast_right.is_colliding():
-		return true
+	var active_shapecast = shapecast_left if wall_run_side == -1 else shapecast_right
+	if active_shapecast and active_shapecast.is_colliding():
+		for i in range(active_shapecast.get_collision_count()):
+			var collider = active_shapecast.get_collider(i)
+			if is_wall_run_surface(collider):
+				return true
 	return false
 
 func is_wall_run_surface(object: Object) -> bool:
 	if not object:
 		return false
-	return object is WallRunSurface
+
+	# Exclude player, enemies, and trigger areas
+	if object is Player or object is StandingEnemy or object is Area3D:
+		return false
+	if object.get_parent() and (object.get_parent() is Player or object.get_parent() is StandingEnemy):
+		return false
+
+	# Explicit WallRunSurface or wall groups
+	if object is WallRunSurface or object.is_in_group("wall") or object.is_in_group("walls"):
+		return true
+
+	# Check name / script for wall keyword
+	var node_name = object.name.to_lower()
+	var parent_name = object.get_parent().name.to_lower() if object.get_parent() else ""
+	var script_path = str(object.get_script().resource_path).to_lower() if object.get_script() else ""
+
+	if node_name.contains("wall") or parent_name.contains("wall") or script_path.contains("wall"):
+		return true
+
+	# StaticBody3D wall geometry (excluding floors, stairs, and traps)
+	if object is StaticBody3D or object is CSGShape3D:
+		if node_name.contains("floor") or parent_name.contains("floor") or node_name.contains("stair") or parent_name.contains("stair") or node_name.contains("trap") or parent_name.contains("trap"):
+			return false
+		return true
+
+	return false
 
 func attack() -> void:
-	if not attack_timer.is_stopped():
-		return # On attack cooldown
+	if is_attacking or is_attack_on_cooldown:
+		return # Cannot attack while windup or cooldown is active
+	if state_machine and state_machine.current_state_type == PlayerStateMachine.StateType.DEAD:
+		return
 
-	# Rewind BGM 1 second as specified in technical document
+	# Stop any running idle return tween
+	if idle_tween and idle_tween.is_running():
+		idle_tween.kill()
+
+	# 1. Pause BGM and rewind 1 second
 	var sm = get_node_or_null("/root/SoundManager")
-	if sm and sm.has_method("rewind_bgm"):
-		sm.rewind_bgm(1.0)
+	if sm:
+		if sm.has_method("rewind_bgm"):
+			sm.rewind_bgm(1.0)
+		if sm.has_method("pause_bgm"):
+			sm.pause_bgm()
 
+	# 2. Collect StandingEnemy targets hit by AttackRayCast
+	current_attack_targets.clear()
 	if attack_raycast and attack_raycast.is_colliding():
-		var collider = attack_raycast.get_collider()
-		# Successful hit: 0.3s cooldown
-		attack_timer.start(hit_cooldown)
-		if collider and collider.has_method("take_damage"):
-			collider.take_damage(1)
+		var col = attack_raycast.get_collider()
+		if col is StandingEnemy:
+			current_attack_targets.append(col as StandingEnemy)
+		elif col and col.get_parent() is StandingEnemy:
+			current_attack_targets.append(col.get_parent() as StandingEnemy)
+
+	# 3. Determine if attack is successful (targets array is not empty)
+	current_attack_is_success = not current_attack_targets.is_empty()
+
+	# 4. Start windup timer
+	is_attacking = true
+	attack_windup_timer = attack_windup_time
+
+	# 5. Shift Idle 300px down and switch UI visibility to Attack
+	if idle_sprite:
+		idle_sprite.position.y = default_idle_position_y + 300.0
+		idle_sprite.visible = false
+	if attack_sprite:
+		attack_sprite.visible = true
+		if current_attack_is_success:
+			attack_sprite.play("success")
+		else:
+			attack_sprite.play("fail")
+
+func _on_attack_animation_finished() -> void:
+	if not is_attacking:
+		return
+
+	is_attacking = false
+
+	# 1. Unpause BGM when attack animation finishes
+	var sm = get_node_or_null("/root/SoundManager")
+	if sm and sm.has_method("unpause_bgm"):
+		sm.unpause_bgm()
+
+	# 2. Immediately switch UI: hide Attack sprite, show Idle sprite (at +300px offset)
+	if attack_sprite:
+		attack_sprite.visible = false
+	if idle_sprite:
+		idle_sprite.visible = true
+
+	# 3. Deal damage if attack succeeded and start appropriate cooldown
+	if current_attack_is_success:
+		for enemy in current_attack_targets:
+			if is_instance_valid(enemy) and enemy.has_method("take_damage"):
+				enemy.take_damage(attack_damage)
+		is_attack_on_cooldown = true
+		attack_cooldown_timer = attack_success_cooldown
 	else:
-		# Miss hit: 5.0s miss cooldown
-		attack_timer.start(miss_cooldown)
+		is_attack_on_cooldown = true
+		attack_cooldown_timer = attack_fail_cooldown
+
+func update_attack_logic(delta: float) -> void:
+	if is_attack_on_cooldown:
+		attack_cooldown_timer -= delta
+		if attack_cooldown_timer <= 0.0:
+			is_attack_on_cooldown = false
+
+			# Cooldown finished: Re-enable attack input & smoothly move Idle back to original position over 0.5s
+			current_attack_targets.clear()
+			if idle_sprite:
+				if idle_tween and idle_tween.is_running():
+					idle_tween.kill()
+				idle_tween = create_tween()
+				idle_tween.tween_property(idle_sprite, "position:y", default_idle_position_y, 0.5)\
+					.set_trans(Tween.TRANS_SINE)\
+					.set_ease(Tween.EASE_OUT)
+
+
 
 func take_damage(amount: int) -> void:
 	if state_machine and state_machine.current_state_type == PlayerStateMachine.StateType.DEAD:
@@ -335,7 +480,7 @@ func update_timer_ui() -> void:
 	if not timer_label:
 		return
 	var total_seconds: int = int(total_game_time)
-	var minutes: int = total_seconds / 60
+	var minutes: int = int(float(total_seconds) / 60)
 	var seconds: int = total_seconds % 60
 	timer_label.text = "%02d:%02d" % [minutes, seconds]
 
@@ -347,10 +492,14 @@ func _on_area_entered(area: Area3D) -> void:
 	if area.get_script():
 		script_name = str(area.get_script().get_global_name())
 
-	if script_name == "FrontGuard" or area.name.contains("FrontGuard") or script_name == "StandingEnemy" or area.name.contains("StandingEnemy") or area.get_parent() is StandingEnemy:
+	if script_name == "FrontGuard" or area.name.contains("FrontGuard"):
 		take_damage(1)
+	elif script_name == "CobwebTrap" or area.name.contains("Cobweb") or area.get("is_cobweb") == true:
+		take_damage(0)
 	elif script_name == "TrapArea" or area.name.contains("TrapArea") or area.name.contains("Trap"):
-		if area.get("is_instakill") == true:
+		if area.get("is_cobweb") == true:
+			take_damage(0)
+		elif area.get("is_instakill") == true:
 			instant_death()
 		else:
 			take_damage(1)

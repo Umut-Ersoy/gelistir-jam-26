@@ -3,7 +3,8 @@
 [ext_resource type="PackedScene" uid="uid://d0jttjlxbjfp" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" uid="uid://bt5rki4f77ht6" path="res://scripts/environment/dungeon_generator.gd" id="2_dungeongen"]
 [ext_resource type="Shader" uid="uid://sljb8kjq6goq" path="res://assets/shaders/pixelate.gdshader" id="4_cet4m"]
-[ext_resource type="PackedScene" path="res://scenes/entities/chasing_horde.tscn" id="4_sxapu"]
+[ext_resource type="PackedScene" uid="uid://c5t37kkkexxoh" path="res://scenes/entities/chasing_horde.tscn" id="4_sxapu"]
+[ext_resource type="Script" uid="uid://byduu8pk8qgyh" path="res://scripts/entities/chasing_horde.gd" id="5_cet4m"]
 
 [sub_resource type="Environment" id="Environment_root"]
 background_mode = 1
@@ -20,6 +21,8 @@ shader = ExtResource("4_cet4m")
 shader_parameter/pixel_size = 6.0
 shader_parameter/intensity = 1.0
 
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_5gtgg"]
+
 [node name="RootScene" type="Node3D" unique_id=536218817]
 
 [node name="Environment" type="Node3D" parent="." unique_id=814565750]
@@ -32,7 +35,6 @@ script = ExtResource("2_dungeongen")
 max_corridor_width = 8
 end_stair_chance = 0.2
 max_stairs_length = 6
-despawn_distance_behind = 100.0
 trap_chance = 0.4
 
 [node name="ActiveCorridors" type="Node3D" parent="DungeonGenerator" unique_id=349616799]
@@ -40,6 +42,8 @@ trap_chance = 0.4
 [node name="Player" parent="." unique_id=1208151537 instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -1)
 move_speed = 10.0
+wall_run_speed = 10.0
+wall_run_max_time = 1.2
 max_camera_tilt_deg = 2.5
 
 [node name="CanvasShader" type="CanvasLayer" parent="." unique_id=100528168]
@@ -56,4 +60,15 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="ChasingHorde" parent="." unique_id=1762314424 instance=ExtResource("4_sxapu")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.3194847)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5.8194847)
+
+[node name="DeathZone" type="Area3D" parent="." unique_id=1188647222]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, 0)
+script = ExtResource("5_cet4m")
+speed = 0.0
+start_delay = 0.0
+path_recalc_interval = 9999.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DeathZone" unique_id=1328855638]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("WorldBoundaryShape3D_5gtgg")

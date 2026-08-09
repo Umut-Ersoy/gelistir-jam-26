@@ -4,6 +4,7 @@ class_name PlayerStateMachine
 enum StateType {
 	GROUNDED,
 	JUMP,
+	FALL,
 	SLIDE,
 	WALL_RUN,
 	GET_HIT,
@@ -36,6 +37,7 @@ func get_state_name(state_type: StateType) -> String:
 	match state_type:
 		StateType.GROUNDED: return "GROUNDED"
 		StateType.JUMP: return "JUMP"
+		StateType.FALL: return "FALL"
 		StateType.SLIDE: return "SLIDE"
 		StateType.WALL_RUN: return "WALL_RUN"
 		StateType.GET_HIT: return "GET_HIT"

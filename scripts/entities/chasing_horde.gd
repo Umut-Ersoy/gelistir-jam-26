@@ -67,12 +67,6 @@ func _physics_process(delta: float) -> void:
 	# Move along current A* path
 	_move_along_path(delta)
 
-	# Keep visual plane continuously facing the player
-	if visual and target_player:
-		var look_target = target_player.global_position
-		look_target.y = visual.global_position.y
-		if visual.global_position.distance_squared_to(look_target) > 0.01:
-			visual.look_at(look_target, Vector3.UP)
 
 func _recalculate_path() -> void:
 	if dungeon_gen and dungeon_gen.has_method("get_astar_path") and target_player:

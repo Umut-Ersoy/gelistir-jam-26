@@ -9,17 +9,25 @@ class_name StandingEnemy
 @export var attack_windup_time: float = 0.5 # Preparation time before dealing damage (seconds)
 @export var attack_cooldown: float = 1.2    # Delay between consecutive attacks (seconds)
 
+@export_group("Despawn Settings")
+@export var raycast_despawn_time: float = 1.0 # Self-destruct if RayCast3D detects nothing for this long
+
 @onready var visual: Node3D = get_node_or_null("Visual")
 @onready var trigger_area: Area3D = get_node_or_null("TriggerArea")
+@onready var animated_sprite: AnimatedSprite3D = get_node_or_null("AnimatedSprite3D") as AnimatedSprite3D
+@onready var raycast: RayCast3D = get_node_or_null("RayCast3D") as RayCast3D
 
 var current_hp: int = 2
 var target_player: Player = null
 var is_player_in_trigger: bool = false
 var is_attacking: bool = false
 var is_on_cooldown: bool = false
+var is_in_post_attack: bool = false
 
 var windup_timer: float = 0.0
 var cooldown_timer: float = 0.0
+var post_attack_timer: float = 0.0
+var no_detection_timer: float = 0.0
 
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -27,6 +35,19 @@ func _ready() -> void:
 	current_hp = max_hp
 	_find_player()
 	_setup_trigger_signals()
+	_play_anim("idle")
+
+func _play_anim(anim_name: String) -> void:
+	if not animated_sprite:
+		animated_sprite = get_node_or_null("AnimatedSprite3D") as AnimatedSprite3D
+		if not animated_sprite and visual:
+			animated_sprite = visual as AnimatedSprite3D
+			if not animated_sprite:
+				animated_sprite = visual.get_node_or_null("AnimatedSprite3D") as AnimatedSprite3D
+
+	if animated_sprite and animated_sprite.sprite_frames:
+		if animated_sprite.sprite_frames.has_animation(anim_name):
+			animated_sprite.play(anim_name)
 
 func _setup_trigger_signals() -> void:
 	if trigger_area:
@@ -54,18 +75,31 @@ func _physics_process(delta: float) -> void:
 	if not target_player:
 		_find_player()
 
-	# Keep visual plane continuously facing the player
-	if visual and target_player:
-		var look_target = target_player.global_position
-		look_target.y = visual.global_position.y
-		if visual.global_position.distance_squared_to(look_target) > 0.01:
-			visual.look_at(look_target, Vector3.UP)
+	# RayCast3D continuous non-detection despawn check
+	if raycast:
+		if raycast.is_colliding():
+			no_detection_timer = 0.0
+		else:
+			no_detection_timer += delta
+			if no_detection_timer >= raycast_despawn_time:
+				die()
+				return
 
 	# Handle attack windup timer
 	if is_attacking:
 		windup_timer -= delta
 		if windup_timer <= 0.0:
 			_execute_attack()
+
+	# Handle 0.2s post-attack animation timer (attack -> prepare or idle)
+	if is_in_post_attack:
+		post_attack_timer -= delta
+		if post_attack_timer <= 0.0:
+			is_in_post_attack = false
+			if is_player_in_trigger:
+				_play_anim("prepare")
+			else:
+				_play_anim("idle")
 
 	# Handle attack cooldown timer
 	if is_on_cooldown:
@@ -81,21 +115,27 @@ func _on_trigger_body_entered(body: Node) -> void:
 	if body is Player:
 		target_player = body as Player
 		is_player_in_trigger = true
+		_play_anim("prepare")
 		_try_start_attack()
 
 func _on_trigger_body_exited(body: Node) -> void:
 	if body is Player:
 		is_player_in_trigger = false
+		if not is_in_post_attack and not is_attacking:
+			_play_anim("idle")
 
 func _on_trigger_area_entered(area: Area3D) -> void:
 	if area and area.get_parent() is Player:
 		target_player = area.get_parent() as Player
 		is_player_in_trigger = true
+		_play_anim("prepare")
 		_try_start_attack()
 
 func _on_trigger_area_exited(area: Area3D) -> void:
 	if area and area.get_parent() is Player:
 		is_player_in_trigger = false
+		if not is_in_post_attack and not is_attacking:
+			_play_anim("idle")
 
 # ─── Attack Logic ─────────────────────────────────────────────────────────────
 
@@ -115,6 +155,11 @@ func _execute_attack() -> void:
 	is_attacking = false
 	is_on_cooldown = true
 	cooldown_timer = attack_cooldown
+
+	# Play attack animation and set 0.2s post-attack timer
+	_play_anim("attack")
+	is_in_post_attack = true
+	post_attack_timer = 0.2
 
 	if current_hp <= 0:
 		return

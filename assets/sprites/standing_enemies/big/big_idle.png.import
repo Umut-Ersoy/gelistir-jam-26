@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cuxqtw07jf2wk"
-path.s3tc="res://.godot/imported/torch_fire_anim.png-6f864f33a49c9cfc4612e8e9f86da987.s3tc.ctex"
+uid="uid://bxb6e4jflqgr7"
+path.s3tc="res://.godot/imported/big_idle.png-99c522c8f4bb074ffcde73cd0a94f77b.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/sprites/torch_fire_anim.png"
-dest_files=["res://.godot/imported/torch_fire_anim.png-6f864f33a49c9cfc4612e8e9f86da987.s3tc.ctex"]
+source_file="res://assets/sprites/standing_enemies/big/big_idle.png"
+dest_files=["res://.godot/imported/big_idle.png-99c522c8f4bb074ffcde73cd0a94f77b.s3tc.ctex"]
 
 [params]
 

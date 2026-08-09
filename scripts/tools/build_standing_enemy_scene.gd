@@ -48,6 +48,14 @@ func _init() -> void:
 	trigger_area.add_child(trig_col)
 	enemy.add_child(trigger_area)
 
+	# 4. RayCast3D for floor/environment detection & automatic self-destruct
+	var raycast = RayCast3D.new()
+	raycast.name = "RayCast3D"
+	raycast.position = Vector3(0, 1.0, 0)
+	raycast.target_position = Vector3(0, -2.0, 0)
+	raycast.enabled = true
+	enemy.add_child(raycast)
+
 	# Set ownership for scene serialization
 	set_owner_recursive(enemy, enemy)
 

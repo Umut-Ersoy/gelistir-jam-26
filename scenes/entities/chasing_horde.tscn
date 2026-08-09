@@ -1,27 +1,114 @@
 [gd_scene format=3 uid="uid://c5t37kkkexxoh"]
 
 [ext_resource type="Script" uid="uid://byduu8pk8qgyh" path="res://scripts/entities/chasing_horde.gd" id="1_dxl50"]
+[ext_resource type="Texture2D" uid="uid://8hgduoeu5er3" path="res://assets/sprites/horde_anim.png" id="2_ixeti"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ixeti"]
-transparency = 1
-cull_mode = 2
-albedo_color = Color(0.8, 0.15, 0.15, 0.85)
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_sxapu"]
+radius = 4.0
 
-[sub_resource type="QuadMesh" id="QuadMesh_uy8q7"]
-material = SubResource("StandardMaterial3D_ixeti")
-size = Vector2(10, 3)
+[sub_resource type="AtlasTexture" id="AtlasTexture_uy8q7"]
+atlas = ExtResource("2_ixeti")
+region = Rect2(0, 0, 2362, 1957)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_dxl50"]
-size = Vector3(3, 3, 1)
+[sub_resource type="AtlasTexture" id="AtlasTexture_qpo0y"]
+atlas = ExtResource("2_ixeti")
+region = Rect2(2362, 0, 2362, 1957)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_x1ut5"]
+atlas = ExtResource("2_ixeti")
+region = Rect2(4724, 0, 2362, 1957)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nkvxx"]
+atlas = ExtResource("2_ixeti")
+region = Rect2(7086, 0, 2362, 1957)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_iqh7i"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uy8q7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qpo0y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_x1ut5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nkvxx")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}]
 
 [node name="ChasingHorde" type="Area3D" unique_id=1762314424]
 script = ExtResource("1_dxl50")
 speed = 8.0
 
-[node name="Visual" type="MeshInstance3D" parent="." unique_id=1050705520]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
-mesh = SubResource("QuadMesh_uy8q7")
-
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1328855638]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0.5)
-shape = SubResource("BoxShape3D_dxl50")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("CylinderShape3D_sxapu")
+
+[node name="AnimatedSprite3D" type="AnimatedSprite3D" parent="." unique_id=892487263]
+transform = Transform3D(0.17, 0, 0, 0, 0.17, 0, 0, 0, 0.17, 0, 1, 0)
+billboard = 2
+sprite_frames = SubResource("SpriteFrames_iqh7i")
+autoplay = "default"
+frame_progress = 0.42845654
+
+[node name="AnimatedSprite3D8" type="AnimatedSprite3D" parent="." unique_id=1646321278]
+transform = Transform3D(0.17, 0, 0, 0, 0.17, 0, 0, 0, 0.17, 0, 1, 4)
+billboard = 2
+sprite_frames = SubResource("SpriteFrames_iqh7i")
+autoplay = "default"
+frame_progress = 0.16317466
+
+[node name="AnimatedSprite3D9" type="AnimatedSprite3D" parent="." unique_id=1302529131]
+transform = Transform3D(0.17, 0, 0, 0, 0.17, 0, 0, 0, 0.17, 0, 1, -4)
+billboard = 2
+sprite_frames = SubResource("SpriteFrames_iqh7i")
+autoplay = "default"
+frame_progress = 0.16317466
+
+[node name="AnimatedSprite3D2" type="AnimatedSprite3D" parent="." unique_id=366696681]
+transform = Transform3D(0.17, 0, 0, 0, 0.17, 0, 0, 0, 0.17, -4, 1, 0)
+billboard = 2
+sprite_frames = SubResource("SpriteFrames_iqh7i")
+autoplay = "default"
+frame_progress = 0.26450172
+
+[node name="AnimatedSprite3D3" type="AnimatedSprite3D" parent="." unique_id=1304771744]
+transform = Transform3D(0.17, 0, 0, 0, 0.17, 0, 0, 0, 0.17, 4, 1, 0)
+billboard = 2
+sprite_frames = SubResource("SpriteFrames_iqh7i")
+autoplay = "default"
+frame_progress = 0.26450172
+
+[node name="AnimatedSprite3D4" type="AnimatedSprite3D" parent="." unique_id=636348714]
+transform = Transform3D(0.17, 0, 0, 0, 0.17, 0, 0, 0, 0.17, -2, 1, -2)
+billboard = 2
+sprite_frames = SubResource("SpriteFrames_iqh7i")
+autoplay = "default"
+frame_progress = 0.939134
+
+[node name="AnimatedSprite3D6" type="AnimatedSprite3D" parent="." unique_id=1645394538]
+transform = Transform3D(0.17, 0, 0, 0, 0.17, 0, 0, 0, 0.17, 2, 1, -2)
+billboard = 2
+sprite_frames = SubResource("SpriteFrames_iqh7i")
+autoplay = "default"
+frame_progress = 0.26450172
+
+[node name="AnimatedSprite3D5" type="AnimatedSprite3D" parent="." unique_id=898275345]
+transform = Transform3D(0.17, 0, 0, 0, 0.17, 0, 0, 0, 0.17, -2, 1, 2)
+billboard = 2
+sprite_frames = SubResource("SpriteFrames_iqh7i")
+autoplay = "default"
+frame_progress = 0.939134
+
+[node name="AnimatedSprite3D7" type="AnimatedSprite3D" parent="." unique_id=573766164]
+transform = Transform3D(0.17, 0, 0, 0, 0.17, 0, 0, 0, 0.17, 2, 1, 2)
+billboard = 2
+sprite_frames = SubResource("SpriteFrames_iqh7i")
+autoplay = "default"
+frame_progress = 0.26450172
