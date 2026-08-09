@@ -45,6 +45,7 @@ animations = [{
 [node name="ChasingHorde" type="Area3D" unique_id=1762314424]
 script = ExtResource("1_dxl50")
 speed = 8.0
+speed_boost_distance = 50.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1328855638]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)

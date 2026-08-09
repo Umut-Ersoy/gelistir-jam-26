@@ -35,6 +35,7 @@ script = ExtResource("2_dungeongen")
 max_corridor_width = 8
 end_stair_chance = 0.2
 max_stairs_length = 6
+despawn_distance_behind = 10.0
 trap_chance = 0.4
 
 [node name="ActiveCorridors" type="Node3D" parent="DungeonGenerator" unique_id=349616799]
