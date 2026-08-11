@@ -23,7 +23,7 @@ func _init() -> void:
 	env.bg_color = Color(0.04, 0.04, 0.07)
 
 	# Ambient light settings
-	env.ambient_light_source = Environment.AMBIENT_COLOR
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.18, 0.18, 0.22)
 	env.ambient_light_energy = 0.6
 

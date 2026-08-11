@@ -6,41 +6,41 @@ class_name Player
 @export var mouse_sensitivity: float = 0.003
 
 @export_group("Movement Settings")
-@export var move_speed: float = 7.0
+@export var move_speed: float = 10.0
 @export var jump_velocity: float = 6.0
 @export var slide_speed: float = 10.0
 @export var slide_duration: float = 0.8
-@export var wall_run_speed: float = 8.0
-@export var wall_run_max_time: float = 2.0          # Maximum wall-run duration in seconds
+@export var wall_run_speed: float = 10.0
+@export var wall_run_max_time: float = 1.2 # Maximum wall-run duration in seconds
 @export var fast_fall_speed: float = 18.0
-@export var jump_buffer_time: float = 0.05          # Input buffering window for jump in seconds
+@export var jump_buffer_time: float = 0.05 # Input buffering window for jump in seconds
 
 @export_group("Attack Settings")
 @export var attack_damage: int = 1
-@export var attack_windup_time: float = 0.2        # Windup time in seconds before dealing damage
-@export var attack_success_cooldown: float = 0.3    # Cooldown time in seconds after successful attack
-@export var attack_fail_cooldown: float = 5.0       # Cooldown time in seconds after missed attack
+@export var attack_windup_time: float = 0.2 # Windup time in seconds before dealing damage
+@export var attack_success_cooldown: float = 0.3 # Cooldown time in seconds after successful attack
+@export var attack_fail_cooldown: float = 5.0 # Cooldown time in seconds after missed attack
 
 @export_group("Kill & Death Settings")
-@export var kapak_chance: float = 0.10        # 10% chance on kill to play "kapak" animation
-@export var cleaning_chance: float = 0.20     # 20% chance on kill to play "cleaning" animation
-@export var death_sound_delay: float = 1.0    # Delay in seconds before playing random death sound
+@export var kapak_chance: float = 0.10 # 10% chance on kill to play "kapak" animation
+@export var cleaning_chance: float = 0.20 # 20% chance on kill to play "cleaning" animation
+@export var death_sound_delay: float = 1.0 # Delay in seconds before playing random death sound
 
 @export_group("Camera Physics Effects")
-@export var max_camera_tilt_deg: float = 3.5 # Maximum camera tilt angle in degrees when strafing
-@export var camera_tilt_speed: float = 8.0   # Smoothing factor (lerp speed) for camera tilt
-@export var wall_run_tilt_deg: float = 6.0   # Additional camera tilt during wall-run
+@export var max_camera_tilt_deg: float = 2.5 # Maximum camera tilt angle in degrees when strafing
+@export var camera_tilt_speed: float = 8.0 # Smoothing factor (lerp speed) for camera tilt
+@export var wall_run_tilt_deg: float = 6.0 # Additional camera tilt during wall-run
 @export var slide_camera_speed: float = 12.0 # Smoothing lerp speed for camera Y height during slide
 
 @export_group("UI Drag Settings")
-@export var idle_drag_max_up: float = 15.0        # Max pixels shift UP when moving backward (horizontal)
-@export var idle_drag_max_down: float = 15.0      # Max pixels shift DOWN when moving forward (horizontal)
-@export var idle_drag_max_left: float = 20.0      # Max pixels shift LEFT when moving right
-@export var idle_drag_max_right: float = 20.0     # Max pixels shift RIGHT when moving left
+@export var idle_drag_max_up: float = 15.0 # Max pixels shift UP when moving backward (horizontal)
+@export var idle_drag_max_down: float = 15.0 # Max pixels shift DOWN when moving forward (horizontal)
+@export var idle_drag_max_left: float = 20.0 # Max pixels shift LEFT when moving right
+@export var idle_drag_max_right: float = 20.0 # Max pixels shift RIGHT when moving left
 @export var idle_drag_max_jump_down: float = 20.0 # Max pixels shift DOWN when jumping/rising (Y velocity > 0)
-@export var idle_drag_max_fall_up: float = 20.0   # Max pixels shift UP when falling/descending (Y velocity < 0)
-@export var idle_slide_offset_y: float = -60.0    # Max pixels shift UP when sliding
-@export var idle_drag_speed: float = 8.0          # Smoothing lerp speed for UI drag
+@export var idle_drag_max_fall_up: float = 20.0 # Max pixels shift UP when falling/descending (Y velocity < 0)
+@export var idle_slide_offset_y: float = -60.0 # Max pixels shift UP when sliding
+@export var idle_drag_speed: float = 8.0 # Smoothing lerp speed for UI drag
 
 var current_hp: int = 3
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
@@ -207,7 +207,7 @@ func update_state_logic(delta: float) -> void:
 				state_machine.transition_to(PlayerStateMachine.StateType.GROUNDED)
 			elif Input.is_action_just_pressed("slide"):
 				# Aerial fast fall / ground pound slide
-				velocity.y = -fast_fall_speed
+				velocity.y = - fast_fall_speed
 				enter_slide_state()
 			elif velocity.y < 0.0:
 				state_machine.transition_to(PlayerStateMachine.StateType.FALL)
@@ -217,7 +217,7 @@ func update_state_logic(delta: float) -> void:
 				restore_hitbox()
 				state_machine.transition_to(PlayerStateMachine.StateType.GROUNDED)
 			elif Input.is_action_just_pressed("slide"):
-				velocity.y = -fast_fall_speed
+				velocity.y = - fast_fall_speed
 				enter_slide_state()
 			elif wall_run_count > 0 and check_wall_run_available():
 				state_machine.transition_to(PlayerStateMachine.StateType.WALL_RUN)
@@ -277,7 +277,7 @@ func apply_movement(delta: float) -> void:
 
 	if current_state == PlayerStateMachine.StateType.SLIDE:
 		# Maintain forward sliding direction
-		var slide_dir = -transform.basis.z
+		var slide_dir = - transform.basis.z
 		velocity.x = slide_dir.x * speed
 		velocity.z = slide_dir.z * speed
 	elif direction != Vector3.ZERO:
@@ -295,7 +295,7 @@ func update_camera_tilt(delta: float) -> void:
 	var local_vel = global_transform.basis.inverse() * velocity
 	var lateral_speed = local_vel.x
 	var norm_lateral = clamp(lateral_speed / max(move_speed, 1.0), -1.0, 1.0)
-	var target_tilt_deg = -norm_lateral * max_camera_tilt_deg
+	var target_tilt_deg = - norm_lateral * max_camera_tilt_deg
 
 	# Add extra tilt during wall-run
 	if state_machine and state_machine.current_state_type == PlayerStateMachine.StateType.WALL_RUN:
@@ -342,9 +342,9 @@ func update_idle_transform(delta: float) -> void:
 
 	var target_drag_x: float = 0.0
 	if norm_x > 0.0:
-		target_drag_x = -norm_x * idle_drag_max_left
+		target_drag_x = - norm_x * idle_drag_max_left
 	elif norm_x < 0.0:
-		target_drag_x = -norm_x * idle_drag_max_right
+		target_drag_x = - norm_x * idle_drag_max_right
 
 	var target_drag_y: float = 0.0
 	if norm_z < 0.0:
@@ -367,7 +367,6 @@ func update_idle_transform(delta: float) -> void:
 
 	# 5. Apply target_pos to idle_sprite
 	idle_sprite.position = target_pos
-
 
 
 func enter_slide_state() -> void:
@@ -598,9 +597,6 @@ func update_attack_logic(delta: float) -> void:
 			current_attack_targets.clear()
 
 
-
-
-
 func take_damage(amount: int, slow_duration: float = 0.2) -> void:
 	if state_machine and state_machine.current_state_type == PlayerStateMachine.StateType.DEAD:
 		return
@@ -640,11 +636,11 @@ func instant_death() -> void:
 	# 1. Animate camera falling face-down to the floor over 0.6 seconds
 	if camera:
 		var death_tween = create_tween().set_parallel(true)
-		death_tween.tween_property(camera, "position:y", 0.2, 0.6)\
-			.set_trans(Tween.TRANS_QUAD)\
+		death_tween.tween_property(camera, "position:y", 0.2, 0.6) \
+			.set_trans(Tween.TRANS_QUAD) \
 			.set_ease(Tween.EASE_IN)
-		death_tween.tween_property(camera, "rotation:x", deg_to_rad(-85.0), 0.6)\
-			.set_trans(Tween.TRANS_QUAD)\
+		death_tween.tween_property(camera, "rotation:x", deg_to_rad(-85.0), 0.6) \
+			.set_trans(Tween.TRANS_QUAD) \
 			.set_ease(Tween.EASE_IN)
 
 	# 2. Hide CanvasShader/Idle, show CanvasShader/Attack & play "death"
@@ -670,7 +666,6 @@ func play_delayed_death_sound() -> void:
 	var sm = get_node_or_null("/root/SoundManager")
 	if sm and sm.has_method("play_random_death_sound"):
 		sm.play_random_death_sound()
-
 
 
 func update_hp_ui() -> void:

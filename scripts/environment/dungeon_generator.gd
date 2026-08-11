@@ -5,20 +5,20 @@ class_name DungeonGenerator
 @export var min_corridor_length: int = 5
 @export var max_corridor_length: int = 25
 @export var min_corridor_width: int = 3
-@export var max_corridor_width: int = 5
+@export var max_corridor_width: int = 8
 
 @export_group("Staircase Settings")
-@export var end_stair_chance: float = 0.5
+@export var end_stair_chance: float = 0.2
 @export var mid_stair_chance: float = 0.4
 @export var min_stairs_length: int = 3
-@export var max_stairs_length: int = 7
+@export var max_stairs_length: int = 6
 
 @export_group("Spawning & Despawning")
 @export var spawn_distance_ahead: float = 50.0
-@export var despawn_distance_behind: float = 20.0
+@export var despawn_distance_behind: float = 10.0
 
 @export_group("Traps")
-@export var trap_chance: float = 0.6
+@export var trap_chance: float = 0.4
 @export var cobweb_chance: float = 0.3 # Probability of spawning a cobweb trap instead of a normal trap
 @export var weight_option_a: float = 40.0 # 1-block gap on left or right
 @export var weight_option_b: float = 30.0 # 1-block gap on both sides
@@ -65,7 +65,7 @@ var last_ceiling_y: float = -1.0 # Ceiling Y level of previous row to detect hei
 
 # Grid coordinate tracking dictionaries for Rule 1 & Rule 2
 var floor_grid: Dictionary = {} # Vector3i -> Node3D
-var wall_grid: Dictionary = {}  # Vector3i -> Node3D
+var wall_grid: Dictionary = {} # Vector3i -> Node3D
 
 # A* Pathfinding graph for ChasingHorde navigation
 var astar := AStar3D.new()
@@ -79,7 +79,7 @@ var horde_ref: Node3D
 func _ready() -> void:
 	# Save initial orientation in _ready()
 	initial_angle_deg = rotation_degrees.y
-	initial_forward_dir = -transform.basis.z.normalized()
+	initial_forward_dir = - transform.basis.z.normalized()
 	current_position = Vector3(round(global_position.x), round(global_position.y), round(global_position.z))
 	current_y = current_position.y
 	current_angle_deg = initial_angle_deg
@@ -394,7 +394,7 @@ func generate_next_segment() -> void:
 	if not was_first_segment:
 		try_spawn_standing_enemies(start_segment_pos, start_y, current_y, current_forward_dir, right_dir, current_angle_deg, active_width, corridor_length)
 
-func spawn_corridor_row(center_pos: Vector3, y_pos: float, fwd_dir: Vector3, right_dir: Vector3, angle_deg: float, is_stair_step: bool, active_width: int, stair_dir: int = 1) -> void:
+func spawn_corridor_row(center_pos: Vector3, y_pos: float, _fwd_dir: Vector3, right_dir: Vector3, angle_deg: float, is_stair_step: bool, active_width: int, stair_dir: int = 1) -> void:
 	var half_w = float(active_width) / 2.0
 
 	# 1. Floor or Stair tiles (Rule 2 applied inside spawn_floor_tile)
@@ -619,7 +619,7 @@ func cleanup_passed_tiles() -> void:
 	if not active_corridors_container or not player_ref:
 		return
 
-	var player_pos = player_ref.global_position
+	var _player_pos = player_ref.global_position
 
 	# Clean up despawned nodes from dictionaries & AStar3D graph
 	var floor_keys = floor_grid.keys()

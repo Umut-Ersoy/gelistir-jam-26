@@ -3,8 +3,8 @@ class_name ChasingHorde
 
 @export_group("Speed & Catch-Up Settings")
 @export var speed: float = 6.5
-@export var speed_boost_distance: float = 15.0     # A* distance threshold in meters to double speed
-@export var speed_boost_multiplier: float = 2.0   # Speed multiplier when A* distance exceeds threshold
+@export var speed_boost_distance: float = 15.0 # A* distance threshold in meters to double speed
+@export var speed_boost_multiplier: float = 2.0 # Speed multiplier when A* distance exceeds threshold
 @export var start_delay: float = 3.0
 @export var path_recalc_interval: float = 0.15 # Recalculate A* path 6-7 times per sec
 
