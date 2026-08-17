@@ -32,20 +32,11 @@ environment = SubResource("Environment_root")
 
 [node name="DungeonGenerator" type="Node3D" parent="." unique_id=542022252]
 script = ExtResource("2_dungeongen")
-max_corridor_width = 8
-end_stair_chance = 0.2
-max_stairs_length = 6
-despawn_distance_behind = 10.0
-trap_chance = 0.4
 
 [node name="ActiveCorridors" type="Node3D" parent="DungeonGenerator" unique_id=349616799]
 
 [node name="Player" parent="." unique_id=1208151537 instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -1)
-move_speed = 10.0
-wall_run_speed = 10.0
-wall_run_max_time = 1.2
-max_camera_tilt_deg = 2.5
 
 [node name="CanvasShader" type="CanvasLayer" parent="." unique_id=100528168]
 process_mode = 4
