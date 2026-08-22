@@ -39,18 +39,27 @@ func _index_bgm_library() -> void:
 	bgm_library.clear()
 	section_order.clear()
 
-	var dir := DirAccess.open("res://assets/sounds/")
+	var dir := DirAccess.open("res://assets/sounds/bgmusic/")
 	if not dir:
-		push_error("SoundManager: 'res://assets/sounds/' dizini açılamadı.")
+		push_error("SoundManager: 'res://assets/sounds/bgmusic/' dizini açılamadı.")
 		return
+
+	# Debug: 'res://assets/sounds/bgmusic/' konumundaki tüm dosyaları yazdır
+	var files := dir.get_files()
+	print("SoundManager [DEBUG]: 'res://assets/sounds/bgmusic/' konumundaki dosyalar (%d adet):" % files.size())
+	for f in files:
+		print("  - ", f)
 
 	dir.list_dir_begin()
 	var file_name := dir.get_next()
+	var registered_files: Dictionary = {}
 	while file_name != "":
-		if not dir.current_is_dir() \
-				and file_name.begins_with("bgmusic_") \
-				and file_name.ends_with(".wav"):
-			_try_register(file_name)
+		if not dir.current_is_dir():
+			var clean_name := file_name.trim_suffix(".import").trim_suffix(".remap")
+			if clean_name.begins_with("bgmusic_") and clean_name.ends_with(".wav"):
+				if not registered_files.has(clean_name):
+					registered_files[clean_name] = true
+					_try_register(clean_name)
 		file_name = dir.get_next()
 	dir.list_dir_end()
 
@@ -74,7 +83,7 @@ func _try_register(file_name: String) -> void:
 		return
 
 	var section := dot_parts[0].to_int()
-	var path := "res://assets/sounds/" + file_name
+	var path := "res://assets/sounds/bgmusic/" + file_name
 	var stream := load(path) as AudioStream
 	if not stream:
 		push_warning("SoundManager: '%s' yüklenemedi, atlanıyor." % path)
@@ -164,4 +173,3 @@ func play_random_death_sound() -> void:
 	]
 	var chosen_path = death_sounds[randi() % death_sounds.size()]
 	play_sfx(chosen_path)
-

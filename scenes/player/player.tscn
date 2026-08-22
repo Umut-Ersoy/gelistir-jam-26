@@ -2631,8 +2631,9 @@ frame_progress = 0.5371003
 [node name="Attack" type="AnimatedSprite2D" parent="CanvasShader" unique_id=1666251272]
 position = Vector2(960, 540)
 sprite_frames = SubResource("SpriteFrames_tbjlg")
-animation = &"death"
-frame_progress = 0.14062802
+animation = &"fail"
+frame = 20
+frame_progress = 1.0
 
 [node name="Hp" type="TextureRect" parent="CanvasShader" unique_id=1524837865]
 offset_right = 40.0
