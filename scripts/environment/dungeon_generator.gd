@@ -223,12 +223,17 @@ func _index_standing_enemies() -> void:
 
 	dir.list_dir_begin()
 	var file_name = dir.get_next()
+	var registered_files: Dictionary = {}
 	while file_name != "":
-		if not dir.current_is_dir() and file_name.ends_with(".tscn"):
-			var full_path = dir_path + file_name
-			var scene = load(full_path) as PackedScene
-			if scene:
-				standing_enemy_scenes.append(scene)
+		if not dir.current_is_dir():
+			var clean_name = file_name.trim_suffix(".remap").trim_suffix(".import")
+			if clean_name.ends_with(".tscn"):
+				if not registered_files.has(clean_name):
+					registered_files[clean_name] = true
+					var full_path = dir_path + clean_name
+					var scene = load(full_path) as PackedScene
+					if scene:
+						standing_enemy_scenes.append(scene)
 		file_name = dir.get_next()
 	dir.list_dir_end()
 
